@@ -400,8 +400,10 @@
 </div>
 
 <script>
-// ====== غيّر السطر ده برابط الـ Apps Script بتاعك بعد النشر ======
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZAdzcDrSzC1BkMC5gH6HIt7_SrfnVqJWVqvyH4Cm5B9yWtHSn_prWnnj9TtIQXFhHsw/exec";
+// ====== رابط السيرفر الموحّد (نفس الرابط لكل العملاء) - غيّر بس معرّف العيادة تحت ======
+const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
+// ====== معرّف العيادة بتاعتك - كل عيادة ليها معرّف مختلف بترجعه لوحة التحكم الرئيسية عند إضافتها ======
+const CLINIC_ID = "demo-clinic";
 
 let appData = { settings: {}, bookings: [] };
 let selectedService = null;
@@ -521,7 +523,7 @@ function timeSlots(startHour, endHour) {
 
 async function loadData() {
   try {
-    const res = await fetch(APPS_SCRIPT_URL);
+    const res = await fetch(API_URL + '?action=getPublicData&clinicId=' + encodeURIComponent(CLINIC_ID));
     appData = await res.json();
 
     document.getElementById('loading').style.display = 'none';
@@ -788,10 +790,10 @@ async function performBooking() {
   btnNext.textContent = 'جاري الحجز...';
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'book', day: selectedDay, time: selectedTime, service: selectedService, phone, doctor: selectedDoctor || '' })
+      body: JSON.stringify({ action: 'book', clinicId: CLINIC_ID, day: selectedDay, time: selectedTime, service: selectedService, phone, doctor: selectedDoctor || '' })
     });
     const rawText = await res.text();
     const result = JSON.parse(rawText);
@@ -880,10 +882,10 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
   submitBtn.disabled = true;
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'verifyPin', pin: typedPin })
+      body: JSON.stringify({ action: 'verifyPin', clinicId: CLINIC_ID, pin: typedPin })
     });
     const result = await res.json();
     submitBtn.disabled = false;
@@ -964,10 +966,10 @@ document.getElementById('submit-recover').addEventListener('click', async () => 
   btn.textContent = 'جاري التغيير...';
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'recoverPin', securityAnswer: answer, newPin })
+      body: JSON.stringify({ action: 'recoverPin', clinicId: CLINIC_ID, securityAnswer: answer, newPin })
     });
     const result = await res.json();
     btn.disabled = false;
@@ -1014,10 +1016,10 @@ document.getElementById('save-settings').addEventListener('click', async () => {
   };
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'updateSettings', pin: enteredPin, settings: newSettings })
+      body: JSON.stringify({ action: 'updateSettings', clinicId: CLINIC_ID, pin: enteredPin, settings: newSettings })
     });
     const result = await res.json();
     if (!result.success) {
