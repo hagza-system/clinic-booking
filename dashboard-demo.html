@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم الحجوزات - نسخة تجريبية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #185fa5; --primary-dark: #0c447c; --primary-light: #c9dcee; --primary-tint: #eef4fa;
+    --ink: #23262b; --muted: #767b85; --line: #e6e1d5; --bg: #f2eee5; --paper: #fffdf9;
+  }
+  body {
+    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg); color: var(--ink); min-height: 100vh; padding: 26px 16px 60px;
+  }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 7px; }
+  input, select {
+    width: 100%; height: 46px; border-radius: 12px; border: 1.5px solid var(--line);
+    padding: 0 14px; font-size: 15px; font-family: inherit; background: #fff; color: var(--ink);
+  }
+  input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3.5px var(--primary-tint); }
+  .error-msg { font-size: 13px; color: #b3392f; margin-top: 8px; display: none; }
+  .btn-primary, .btn-secondary {
+    height: 46px; border-radius: 12px; font-size: 14.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .btn-primary { background: var(--primary); border: none; color: #fff; width: 100%; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: #fff; border: 1.5px solid var(--line); color: var(--ink); }
+
+  /* ===== بوابة الدخول ===== */
+  #pin-gate { max-width: 360px; margin: 90px auto 0; background: #fff; border-radius: 20px; padding: 30px 26px; box-shadow: 0 16px 40px rgba(30,25,15,.1); text-align: center; }
+  #pin-gate h1 { font-family: 'El Messiri', sans-serif; font-size: 18px; margin-bottom: 4px; }
+  #pin-gate p { font-size: 12.5px; color: var(--muted); margin-bottom: 18px; }
+
+  /* ===== الداشبورد ===== */
+  .wrap { max-width: 760px; margin: 0 auto; display: none; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px; flex-wrap: wrap; }
+  .topbar h1 { font-family: 'El Messiri', sans-serif; font-size: 19px; }
+  .topbar h1 span { display: block; font-family: 'IBM Plex Sans Arabic', sans-serif; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+  #refresh-btn { background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  #refresh-btn:hover { border-color: var(--primary); }
+
+  .stats-row { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+  .stat-card { background: #fff; border-radius: 14px; padding: 14px 18px; flex: 1; min-width: 150px; border: 1px solid var(--line); }
+  .stat-card .num { font-size: 20px; font-weight: 700; color: var(--primary-dark); font-family: 'El Messiri', sans-serif; }
+  .stat-card .label { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+  .chart-card { background: #fff; border-radius: 16px; border: 1px solid var(--line); padding: 16px 18px; margin-bottom: 16px; }
+  .chart-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 14px; font-family: 'El Messiri', sans-serif; color: var(--ink); }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-label { width: 78px; font-size: 12.5px; color: var(--muted); flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 16px; background: var(--bg); border-radius: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--primary); border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+  .bar-value { width: 22px; text-align: left; font-size: 12.5px; font-weight: 700; color: var(--ink); flex-shrink: 0; }
+  .chart-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+  .day-group { background: #fff; border-radius: 16px; border: 1px solid var(--line); margin-bottom: 14px; overflow: hidden; }
+  .day-group-header { background: var(--primary-tint); padding: 11px 16px; font-weight: 700; font-size: 14px; color: var(--primary-dark); display: flex; justify-content: space-between; }
+  .booking-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 13.5px; gap: 12px; flex-wrap: wrap; }
+  .booking-row .info { display: flex; gap: 16px; flex-wrap: wrap; align-items: baseline; }
+  .booking-row .info b { color: var(--ink); }
+  .booking-row .info .muted-label { color: var(--muted); font-size: 12px; }
+  .row-actions { display: flex; gap: 6px; }
+  .icon-btn { border: 1.5px solid var(--line); background: #fff; border-radius: 9px; padding: 6px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .icon-btn:hover { border-color: var(--primary); }
+  .icon-btn.danger { color: #b3392f; border-color: #f1d4cf; }
+  .icon-btn.danger:hover { border-color: #b3392f; }
+  .empty-day { padding: 16px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* ===== مودال التعديل ===== */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(20,18,14,.45); align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 18px; padding: 26px; max-width: 400px; width: 100%; }
+  .modal h2 { font-family: 'El Messiri', sans-serif; font-size: 17px; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .modal-actions .btn-primary, .modal-actions .btn-secondary { flex: 1; }
+</style>
+</head>
+<body>
+
+<div id="pin-gate">
+  <h1>لوحة تحكم الحجوزات</h1>
+  <p>ادخلي بنفس كلمة سر إعدادات العيادة</p>
+  <div class="field">
+    <input type="password" id="pin-input" placeholder="كلمة السر">
+  </div>
+  <p class="error-msg" id="pin-error">كلمة السر غير صحيحة</p>
+  <button class="btn-primary" id="submit-pin">دخول</button>
+</div>
+
+<div class="wrap" id="dashboard">
+  <div class="topbar">
+    <h1 id="dash-title">لوحة التحكم<span id="dash-subtitle">—</span></h1>
+    <button id="refresh-btn">تحديث 🔄</button>
+  </div>
+  <div id="notify-banner" style="display:none; background:#fff; border:1.5px solid #25D366; border-radius:14px; padding:12px 16px; margin-bottom:18px;"></div>
+  <div class="stats-row" id="stats-row"></div>
+  <div class="chart-card">
+    <h3>الحجوزات حسب اليوم</h3>
+    <div id="day-chart"></div>
+  </div>
+  <div class="chart-card">
+    <h3>الحجوزات حسب الخدمة</h3>
+    <div id="service-chart"></div>
+  </div>
+  <div class="chart-card">
+    <h3>حظر يوم معين (لظروف طارئة)</h3>
+    <div class="field">
+      <select id="block-date-select"></select>
+    </div>
+    <button type="button" id="check-block-btn" class="btn-secondary" style="width:100%;">تحقق واحظري اليوم ده</button>
+    <div id="block-warning" style="display:none; margin-top:12px;"></div>
+    <div id="blocked-dates-list" style="margin-top:14px;"></div>
+  </div>
+  <div id="days-list"></div>
+  <div id="past-list"></div>
+</div>
+
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h2>تعديل الحجز</h2>
+    <div class="field" id="edit-doctor-field" style="display:none;"><label>الدكتور</label><select id="edit-doctor"></select></div>
+    <div class="field"><label>اليوم</label><select id="edit-day"></select></div>
+    <div class="field"><label>الوقت</label><input type="text" id="edit-time" placeholder="مثال: 3:00 م"></div>
+    <div class="field"><label>الخدمة</label><select id="edit-service"></select></div>
+    <div class="field"><label>رقم الموبايل</label><input type="tel" id="edit-phone"></div>
+    <p class="error-msg" id="edit-error"></p>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancel-edit">إلغاء</button>
+      <button class="btn-primary" id="save-edit">حفظ التعديل</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZAdzcDrSzC1BkMC5gH6HIt7_SrfnVqJWVqvyH4Cm5B9yWtHSn_prWnnj9TtIQXFhHsw/exec";
+
+let settings = {};
+let bookings = [];
+let enteredPin = null;
+let blockedDates = [];
+let editingBooking = null;
+
+function hexToRgb(hex) {
+  hex = (hex || '#185fa5').replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  const num = parseInt(hex, 16) || 0x185fa5;
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+function mixTowards(hex, target, amount) {
+  const c = hexToRgb(hex);
+  const r = Math.round(c.r + (target.r - c.r) * amount);
+  const g = Math.round(c.g + (target.g - c.g) * amount);
+  const b = Math.round(c.b + (target.b - c.b) * amount);
+  return `rgb(${r},${g},${b})`;
+}
+function applyTheme(hex) {
+  const white = { r: 255, g: 255, b: 255 }, black = { r: 0, g: 0, b: 0 };
+  const root = document.documentElement.style;
+  root.setProperty('--primary', hex);
+  root.setProperty('--primary-dark', mixTowards(hex, black, 0.28));
+  root.setProperty('--primary-tint', mixTowards(hex, white, 0.93));
+}
+
+function timeSortKey(t) {
+  const m = (t || '').match(/(\d+):00 (ص|م)/);
+  if (!m) return 0;
+  let h = parseInt(m[1], 10);
+  if (m[2] === 'م' && h !== 12) h += 12;
+  if (m[2] === 'ص' && h === 12) h = 0;
+  return h;
+}
+
+async function loadSettings() {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL);
+    const data = await res.json();
+    settings = data.settings || {};
+    applyTheme(settings.primaryColor || '#185fa5');
+    document.getElementById('dash-subtitle').textContent = settings.clinicName || 'العيادة';
+  } catch (err) { /* الإعدادات مش أساسية لفتح صفحة الدخول */ }
+}
+
+document.getElementById('submit-pin').addEventListener('click', async () => {
+  const pin = document.getElementById('pin-input').value.trim();
+  const pinError = document.getElementById('pin-error');
+  const btn = document.getElementById('submit-pin');
+  btn.disabled = true;
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getFullBookings', pin })
+    });
+    const result = await res.json();
+    btn.disabled = false;
+    if (!result.success) {
+      pinError.textContent = result.message || 'كلمة السر غير صحيحة';
+      pinError.style.display = 'block';
+      return;
+    }
+    enteredPin = pin;
+    bookings = result.bookings;
+    document.getElementById('pin-gate').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    renderDashboard();
+  } catch (err) {
+    btn.disabled = false;
+    pinError.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    pinError.style.display = 'block';
+  }
+});
+
+document.getElementById('pin-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('submit-pin').click();
+});
+
+document.getElementById('refresh-btn').addEventListener('click', async () => {
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'getFullBookings', pin: enteredPin })
+  });
+  const result = await res.json();
+  if (result.success) { bookings = result.bookings; renderDashboard(); }
+});
+
+function renderDashboard() {
+  blockedDates = (settings.blockedDates || '').split(',').map(x => x.trim()).filter(Boolean);
+  renderStats();
+  renderDaysList();
+  renderPastList();
+  populateBlockDateSelect();
+  renderBlockedDatesList();
+  document.getElementById('block-warning').style.display = 'none';
+}
+
+function isPastDay(dateStr) {
+  const d = parseArabicDateKey(dateStr);
+  if (!d) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d.getTime() < today.getTime();
+}
+
+function toWhatsappFormat(localPhone) {
+  return '20' + (localPhone || '').replace(/^0/, '');
+}
+
+function populateBlockDateSelect() {
+  const allowedDays = (settings.days || '').split(',').map(x => x.trim()).filter(Boolean);
+  const upcoming = getUpcomingDates(allowedDays, 21).filter(d => !blockedDates.includes(formatDateKey(d)));
+  const select = document.getElementById('block-date-select');
+  select.innerHTML = upcoming.length
+    ? upcoming.map(d => `<option value="${formatDateKey(d)}">${formatDateLabel(d)}</option>`).join('')
+    : '<option value="">مفيش أيام متاحة تتحظر</option>';
+}
+
+document.getElementById('check-block-btn').addEventListener('click', () => {
+  const dateKey = document.getElementById('block-date-select').value;
+  if (!dateKey) return;
+  const affected = bookings.filter(b => b.day === dateKey);
+  const warningDiv = document.getElementById('block-warning');
+
+  let html = '';
+  if (affected.length > 0) {
+    html += `<p style="color:#b3392f; font-weight:600; margin-bottom:10px; font-size:13.5px;">⚠️ فيه ${affected.length} حجز في اليوم ده - يفضل تبلغي العملاء الأول:</p>`;
+    affected.forEach(b => {
+      const msg = encodeURIComponent(`مرحباً، للأسف محتاجين نأجل موعدك يوم ${dateKey} الساعة ${b.time} لظرف طارئ في العيادة. تقدر/ي تتواصل معانا نحدد ميعاد بديل يناسبك.`);
+      html += `
+        <div class="booking-row" style="background:var(--bg); border-radius:10px; margin-bottom:8px; padding:10px 14px; border-top:none;">
+          <div class="info"><b>${b.time}</b>${b.doctor ? `<span>${b.doctor}</span>` : ''}<span dir="ltr">${b.phone}</span></div>
+          <a href="https://wa.me/${toWhatsappFormat(b.phone)}?text=${msg}" target="_blank" rel="noopener" class="icon-btn" style="text-decoration:none; background:#25D366; color:#fff; border:none;">📱 واتساب</a>
+        </div>`;
+    });
+  } else {
+    html += `<p style="color:var(--muted); font-size:13px; margin-bottom:10px;">مفيش حجوزات في اليوم ده - آمن تحظريه.</p>`;
+  }
+  html += `<button type="button" id="confirm-block-btn" class="btn-primary" style="width:100%; ${affected.length ? 'background:#b3392f;' : ''}">تأكيد حظر اليوم ده</button>`;
+
+  warningDiv.innerHTML = html;
+  warningDiv.style.display = 'block';
+
+  document.getElementById('confirm-block-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('confirm-block-btn');
+    btn.disabled = true;
+    btn.textContent = 'جاري الحظر...';
+    blockedDates.push(dateKey);
+    const ok = await saveBlockedDates();
+    if (!ok) { blockedDates = blockedDates.filter(d => d !== dateKey); alert('حصل خطأ، حاول تاني'); }
+    warningDiv.style.display = 'none';
+    populateBlockDateSelect();
+    renderBlockedDatesList();
+  });
+});
+
+async function saveBlockedDates() {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'updateSettings', pin: enteredPin, settings: { blockedDates: blockedDates.join(',') } })
+    });
+    const result = await res.json();
+    return !!result.success;
+  } catch (err) {
+    return false;
+  }
+}
+
+function renderBlockedDatesList() {
+  const container = document.getElementById('blocked-dates-list');
+  if (blockedDates.length === 0) { container.innerHTML = ''; return; }
+  container.innerHTML = '<p style="font-size:12px; color:var(--muted); margin-bottom:8px;">أيام محظورة حالياً:</p>' +
+    blockedDates.map(dk => `
+      <div class="booking-row" style="border-top:none; padding:8px 0;">
+        <div class="info"><b>${dk}</b></div>
+        <button type="button" class="icon-btn unblock-btn" data-date="${dk}">إلغاء الحظر</button>
+      </div>`).join('');
+  container.querySelectorAll('.unblock-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const removed = btn.dataset.date;
+      blockedDates = blockedDates.filter(d => d !== removed);
+      const ok = await saveBlockedDates();
+      if (!ok) { blockedDates.push(removed); alert('حصل خطأ، حاول تاني'); }
+      populateBlockDateSelect();
+      renderBlockedDatesList();
+    });
+  });
+}
+
+function renderStats() {
+  const upcomingBookings = bookings.filter(b => !isPastDay(b.day));
+  const total = upcomingBookings.length;
+  const perDay = {}, perService = {};
+  upcomingBookings.forEach(b => {
+    perDay[b.day] = (perDay[b.day] || 0) + 1;
+    perService[b.service] = (perService[b.service] || 0) + 1;
+  });
+  let busiestDay = '—', maxDay = 0;
+  Object.entries(perDay).forEach(([d, c]) => { if (c > maxDay) { maxDay = c; busiestDay = d; } });
+  let topService = '—', maxService = 0;
+  Object.entries(perService).forEach(([s, c]) => { if (c > maxService) { maxService = c; topService = s; } });
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="label">إجمالي الحجوزات الحالية</div></div>
+    <div class="stat-card"><div class="num">${busiestDay}</div><div class="label">أكتر يوم مطلوب</div></div>
+    <div class="stat-card"><div class="num">${topService}</div><div class="label">أكتر خدمة مطلوبة</div></div>
+  `;
+
+  const dayOrder = Object.keys(perDay).sort((a, b) => (parseArabicDateKey(a) || 0) - (parseArabicDateKey(b) || 0));
+  renderBarChart('day-chart', perDay, dayOrder);
+
+  const serviceOrder = Object.keys(perService).sort((a, b) => perService[b] - perService[a]);
+  renderBarChart('service-chart', perService, serviceOrder);
+}
+
+function renderBarChart(containerId, dataObj, orderedKeys) {
+  const container = document.getElementById(containerId);
+  const maxVal = Math.max(1, ...Object.values(dataObj));
+  const keysWithData = orderedKeys.length ? orderedKeys : Object.keys(dataObj);
+
+  if (keysWithData.length === 0 || Object.values(dataObj).every(v => v === 0)) {
+    container.innerHTML = '<p class="chart-empty">مفيش بيانات كفاية لسه</p>';
+    return;
+  }
+
+  container.innerHTML = keysWithData.map(key => {
+    const value = dataObj[key] || 0;
+    const pct = Math.round((value / maxVal) * 100);
+    return `
+      <div class="bar-row">
+        <span class="bar-label">${key}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <span class="bar-value">${value}</span>
+      </div>`;
+  }).join('');
+}
+
+const ARABIC_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+function parseArabicDateKey(dateStr) {
+  const parts = (dateStr || '').trim().split(' ');
+  if (parts.length < 4) return null;
+  const day = parseInt(parts[1], 10);
+  const monthIndex = ARABIC_MONTHS.indexOf(parts[2]);
+  const year = parseInt(parts[3], 10);
+  if (isNaN(day) || monthIndex === -1 || isNaN(year)) return null;
+  return new Date(year, monthIndex, day);
+}
+
+function renderDaysList() {
+  const container = document.getElementById('days-list');
+  container.innerHTML = '';
+
+  const upcomingBookings = bookings.filter(b => !isPastDay(b.day));
+  const uniqueDates = [...new Set(upcomingBookings.map(b => b.day))]
+    .sort((a, b) => (parseArabicDateKey(a) || 0) - (parseArabicDateKey(b) || 0));
+
+  if (uniqueDates.length === 0) {
+    container.innerHTML = '<div class="day-group"><div class="empty-day">مفيش أي حجوزات جايه حالياً</div></div>';
+    return;
+  }
+
+  uniqueDates.forEach(day => {
+    const dayBookings = upcomingBookings.filter(b => b.day === day).sort((a, b) => timeSortKey(a.time) - timeSortKey(b.time));
+    const group = document.createElement('div');
+    group.className = 'day-group';
+    const isBlocked = blockedDates.includes(day);
+    group.innerHTML = `<div class="day-group-header"><span>${day} ${isBlocked ? '<span style="color:#b3392f; font-weight:700;">🚫 محظور</span>' : ''}</span><span>${dayBookings.length} حجز</span></div>`;
+
+    if (dayBookings.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-day';
+      empty.textContent = 'مفيش حجوزات في اليوم ده';
+      group.appendChild(empty);
+    } else {
+      dayBookings.forEach(b => {
+        const row = document.createElement('div');
+        row.className = 'booking-row';
+        row.innerHTML = `
+          <div class="info">
+            <b>${b.time}</b>
+            ${b.doctor ? `<span>${b.doctor}</span>` : ''}
+            <span>${b.service}</span>
+            <span dir="ltr">${b.phone}</span>
+          </div>
+          <div class="row-actions">
+            <button type="button" class="icon-btn edit-btn">تعديل</button>
+            <button type="button" class="icon-btn danger cancel-btn">إلغاء</button>
+          </div>`;
+        row.querySelector('.edit-btn').addEventListener('click', () => openEdit(b));
+        row.querySelector('.cancel-btn').addEventListener('click', () => doCancel(b));
+        group.appendChild(row);
+      });
+    }
+    container.appendChild(group);
+  });
+}
+
+function renderPastList() {
+  const container = document.getElementById('past-list');
+  const pastBookings = bookings.filter(b => isPastDay(b.day));
+
+  if (pastBookings.length === 0) { container.innerHTML = ''; return; }
+
+  const uniqueDates = [...new Set(pastBookings.map(b => b.day))]
+    .sort((a, b) => (parseArabicDateKey(b) || 0) - (parseArabicDateKey(a) || 0));
+
+  let html = `<details class="day-group" style="margin-top:6px;">
+    <summary class="day-group-header" style="cursor:pointer; list-style:none;">
+      <span>سجل المواعيد اللي فاتت (بتتمسح تلقائي بعد أسبوعين)</span><span>${pastBookings.length} حجز</span>
+    </summary>
+    <div style="padding:10px 16px; border-top:1px solid var(--line);">
+      <button type="button" id="cleanup-now-btn" class="icon-btn danger" style="width:100%;">امسحي المواعيد اللي فاتت دلوقتي</button>
+    </div>`;
+
+  uniqueDates.forEach(day => {
+    const dayBookings = pastBookings.filter(b => b.day === day).sort((a, b) => timeSortKey(a.time) - timeSortKey(b.time));
+    html += `<div class="day-group-header" style="background:transparent; font-weight:600;"><span>${day}</span><span>${dayBookings.length} حجز</span></div>`;
+    dayBookings.forEach(b => {
+      html += `
+        <div class="booking-row" style="opacity:0.65;">
+          <div class="info">
+            <b>${b.time}</b>
+            ${b.doctor ? `<span>${b.doctor}</span>` : ''}
+            <span>${b.service}</span>
+            <span dir="ltr">${b.phone}</span>
+          </div>
+        </div>`;
+    });
+  });
+
+  html += `</details>`;
+  container.innerHTML = html;
+
+  const cleanupBtn = document.getElementById('cleanup-now-btn');
+  if (cleanupBtn) cleanupBtn.addEventListener('click', doCleanupPastNow);
+}
+
+async function doCleanupPastNow() {
+  if (!confirm('متأكدة إنك عايزة تمسحي كل المواعيد اللي فاتت دلوقتي؟ الخطوة دي مينفعش ترجع فيها.')) return;
+  const btn = document.getElementById('cleanup-now-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'جاري المسح...'; }
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'cleanupPastBookingsNow', pin: enteredPin })
+    });
+    const result = await res.json();
+    if (!result.success) {
+      alert(result.message || 'حصل خطأ، حاول تاني');
+      if (btn) { btn.disabled = false; btn.textContent = 'امسحي المواعيد اللي فاتت دلوقتي'; }
+      return;
+    }
+    bookings = bookings.filter(b => !isPastDay(b.day));
+    renderDashboard();
+  } catch (err) {
+    alert('حصل خطأ في الاتصال، حاول تاني');
+    if (btn) { btn.disabled = false; btn.textContent = 'امسحي المواعيد اللي فاتت دلوقتي'; }
+  }
+}
+
+const ARABIC_DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+// بيقرا اسم الدكتور بس من السطر ("اسم:رقم" أو "اسم,رقم" - بيتقبل الاتنين عشان لو حد كتبها غلط)
+function parseDoctorLineName(line) {
+  let sep = line.indexOf(':');
+  if (sep === -1) {
+    const m = line.match(/[,،](?=\s*\d)/);
+    if (m) sep = m.index;
+  }
+  return sep === -1 ? line.trim() : line.slice(0, sep).trim();
+}
+
+function normalizeArabicDay(s) {
+  return (s || '').trim().replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه');
+}
+const ARABIC_DAY_TO_NUM = {};
+ARABIC_DAY_NAMES.forEach((name, i) => { ARABIC_DAY_TO_NUM[normalizeArabicDay(name)] = i; });
+
+function formatDateLabel(date) {
+  return `${ARABIC_DAY_NAMES[date.getDay()]} ${date.getDate()} ${ARABIC_MONTHS[date.getMonth()]}`;
+}
+function formatDateKey(date) {
+  return `${ARABIC_DAY_NAMES[date.getDay()]} ${date.getDate()} ${ARABIC_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+}
+function getUpcomingDates(allowedDayNames, windowDays) {
+  const allowedNums = allowedDayNames.map(d => ARABIC_DAY_TO_NUM[normalizeArabicDay(d)]).filter(n => n !== undefined);
+  const dates = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < (windowDays || 21); i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    if (allowedNums.includes(d.getDay())) dates.push(d);
+  }
+  return dates;
+}
+
+function openEdit(booking) {
+  editingBooking = booking;
+  const allowedDays = (settings.days || '').split(',').map(x => x.trim()).filter(Boolean);
+  const upcomingDates = getUpcomingDates(allowedDays, 21);
+  const serviceOptions = (settings.services || '').split(',').map(x => x.trim()).filter(Boolean);
+  const doctorOptions = (settings.doctors || '').split('\n').map(line => line.trim()).filter(Boolean).map(parseDoctorLineName);
+
+  const daySelect = document.getElementById('edit-day');
+  const dateOptionsHtml = upcomingDates.map(d => {
+    const key = formatDateKey(d);
+    return `<option value="${key}" ${key === booking.day ? 'selected' : ''}>${formatDateLabel(d)}</option>`;
+  }).join('');
+  // لو تاريخ الحجز الأصلي مبقاش ضمن الأيام الجاية (مثلاً حجز قديم)، ضيفيه في الأول عشان ميضيعش
+  daySelect.innerHTML = upcomingDates.some(d => formatDateKey(d) === booking.day)
+    ? dateOptionsHtml
+    : `<option value="${booking.day}" selected>${booking.day}</option>` + dateOptionsHtml;
+
+  const serviceSelect = document.getElementById('edit-service');
+  serviceSelect.innerHTML = serviceOptions.map(s => `<option ${s === booking.service ? 'selected' : ''}>${s}</option>`).join('');
+
+  const doctorField = document.getElementById('edit-doctor-field');
+  if (doctorOptions.length > 1) {
+    doctorField.style.display = 'block';
+    document.getElementById('edit-doctor').innerHTML = doctorOptions.map(d => `<option ${d === booking.doctor ? 'selected' : ''}>${d}</option>`).join('');
+  } else {
+    doctorField.style.display = 'none';
+  }
+
+  document.getElementById('edit-time').value = booking.time;
+  document.getElementById('edit-phone').value = booking.phone;
+  document.getElementById('edit-error').style.display = 'none';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+document.getElementById('cancel-edit').addEventListener('click', () => {
+  document.getElementById('edit-modal').classList.remove('open');
+});
+
+document.getElementById('save-edit').addEventListener('click', async () => {
+  const editError = document.getElementById('edit-error');
+  const newPhone = document.getElementById('edit-phone').value.trim();
+  const newTime = document.getElementById('edit-time').value.trim();
+
+  if (!/^01[0-9]{9}$/.test(newPhone)) {
+    editError.textContent = 'رقم الموبايل مش صحيح (01xxxxxxxxx)';
+    editError.style.display = 'block';
+    return;
+  }
+  if (!newTime) {
+    editError.textContent = 'اكتب الوقت';
+    editError.style.display = 'block';
+    return;
+  }
+
+  const saveBtn = document.getElementById('save-edit');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'جاري الحفظ...';
+
+  const doctorFieldVisible = document.getElementById('edit-doctor-field').style.display !== 'none';
+  const payload = {
+    action: 'updateBooking', pin: enteredPin,
+    timestamp: editingBooking.timestamp, day: editingBooking.day, time: editingBooking.time, phone: editingBooking.phone,
+    newDay: document.getElementById('edit-day').value,
+    newTime: newTime,
+    newService: document.getElementById('edit-service').value,
+    newPhone: newPhone,
+    newDoctor: doctorFieldVisible ? document.getElementById('edit-doctor').value : (editingBooking.doctor || '')
+  };
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'حفظ التعديل';
+
+    if (!result.success) {
+      editError.textContent = result.message || 'حصل خطأ، حاول تاني';
+      editError.style.display = 'block';
+      return;
+    }
+
+    Object.assign(editingBooking, { day: payload.newDay, time: payload.newTime, service: payload.newService, phone: payload.newPhone, doctor: payload.newDoctor });
+    document.getElementById('edit-modal').classList.remove('open');
+    renderDashboard();
+    showNotifyBanner(editingBooking, `مرحباً، تم تعديل موعدك ليبقى يوم ${payload.newDay} الساعة ${payload.newTime}. لو محتاج/ة أي توضيح كلمينا.`);
+  } catch (err) {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'حفظ التعديل';
+    editError.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    editError.style.display = 'block';
+  }
+});
+
+function showNotifyBanner(booking, message) {
+  const banner = document.getElementById('notify-banner');
+  const waMsg = encodeURIComponent(message);
+  banner.innerHTML = `
+    <p style="font-size:13.5px; margin-bottom:10px;">✅ اتحفظ التغيير - متنسيش تبلغي العميل صاحب الرقم <b dir="ltr">${booking.phone}</b></p>
+    <a href="https://wa.me/${toWhatsappFormat(booking.phone)}?text=${waMsg}" target="_blank" rel="noopener"
+       style="display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:10px; background:#25D366; color:#fff; text-decoration:none; font-size:13.5px; font-weight:600;">
+      📱 بلغي العميل على واتساب
+    </a>
+    <button type="button" id="dismiss-banner" style="background:none; border:none; color:var(--muted); font-size:12.5px; cursor:pointer; margin-right:10px; text-decoration:underline; font-family:inherit;">إخفاء</button>
+  `;
+  banner.style.display = 'block';
+  document.getElementById('dismiss-banner').addEventListener('click', () => { banner.style.display = 'none'; });
+}
+
+async function doCancel(booking) {
+  if (!confirm(`متأكدة إنك عايزة تلغي حجز الساعة ${booking.time} يوم ${booking.day}؟`)) return;
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'cancelBooking', pin: enteredPin, timestamp: booking.timestamp, day: booking.day, time: booking.time, phone: booking.phone })
+    });
+    const result = await res.json();
+    if (!result.success) {
+      alert(result.message || 'حصل خطأ، حاول تاني');
+      return;
+    }
+    bookings = bookings.filter(b => b !== booking);
+    renderDashboard();
+    showNotifyBanner(booking, `مرحباً، للأسف تم إلغاء حجزك يوم ${booking.day} الساعة ${booking.time}. تقدر/ي تتواصل معانا نحدد ميعاد بديل يناسبك.`);
+  } catch (err) {
+    alert('حصل خطأ في الاتصال، حاول تاني');
+  }
+}
+
+loadSettings();
+</script>
+</body>
+</html>
