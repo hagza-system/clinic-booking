@@ -71,6 +71,8 @@
   .icon-btn:hover { border-color: var(--primary); }
   .icon-btn.danger { color: #b3392f; border-color: #f1d4cf; }
   .icon-btn.danger:hover { border-color: #b3392f; }
+  .icon-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .icon-btn:disabled:hover { border-color: #f1d4cf; }
   .empty-day { padding: 16px; text-align: center; color: var(--muted); font-size: 13px; }
 
   /* ===== مودال التعديل ===== */
@@ -449,18 +451,22 @@ function renderPastList() {
   const container = document.getElementById('past-list');
   const pastBookings = bookings.filter(b => isPastDay(b.day));
 
-  if (pastBookings.length === 0) { container.innerHTML = ''; return; }
-
-  const uniqueDates = [...new Set(pastBookings.map(b => b.day))]
-    .sort((a, b) => (parseArabicDateKey(b) || 0) - (parseArabicDateKey(a) || 0));
-
   let html = `<details class="day-group" style="margin-top:6px;">
     <summary class="day-group-header" style="cursor:pointer; list-style:none;">
       <span>سجل المواعيد اللي فاتت (بتتمسح تلقائي بعد أسبوعين)</span><span>${pastBookings.length} حجز</span>
     </summary>
     <div style="padding:10px 16px; border-top:1px solid var(--line);">
-      <button type="button" id="cleanup-now-btn" class="icon-btn danger" style="width:100%;">امسحي المواعيد اللي فاتت دلوقتي</button>
+      <button type="button" id="cleanup-now-btn" class="icon-btn danger" style="width:100%;" ${pastBookings.length === 0 ? 'disabled' : ''}>امسحي المواعيد اللي فاتت دلوقتي</button>
     </div>`;
+
+  if (pastBookings.length === 0) {
+    html += `<div class="empty-day">مفيش مواعيد فايتة دلوقتي</div></details>`;
+    container.innerHTML = html;
+    return;
+  }
+
+  const uniqueDates = [...new Set(pastBookings.map(b => b.day))]
+    .sort((a, b) => (parseArabicDateKey(b) || 0) - (parseArabicDateKey(a) || 0));
 
   uniqueDates.forEach(day => {
     const dayBookings = pastBookings.filter(b => b.day === day).sort((a, b) => timeSortKey(a.time) - timeSortKey(b.time));
