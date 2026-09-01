@@ -174,7 +174,6 @@
   <div class="ticket-header">
     <button class="settings-link" id="open-settings" title="إعدادات العيادة">⚙️</button>
     <div style="display:flex; align-items:center; gap:12px; padding-left:34px;">
-      <img id="clinic-logo" src="" alt="" style="display:none; width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,.5); flex-shrink:0;">
       <div style="min-width:0;">
         <h1 id="clinic-name" style="padding-left:0;">—</h1>
         <p id="clinic-subtitle" style="padding-left:0;">—</p>
@@ -388,14 +387,6 @@
         <p class="hint">بالصيغة الدولية: 20 بدل الصفر الأول، من غير + أو مسافات</p>
       </div>
       <div class="field">
-        <label>رابط لوجو أو صورة العيادة (اختياري)</label>
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-          <img id="s-logo-preview" src="" alt="" style="display:none; width:48px; height:48px; border-radius:50%; object-fit:cover; border:1.5px solid var(--line);">
-        </div>
-        <input type="text" id="s-logoLink" placeholder="الصقي رابط الصورة هنا" dir="ltr">
-        <p class="hint">ارفعي الصورة مرة واحدة على postimages.org (مجاني وبدون تسجيل) وانسخي رابط الصورة المباشر، والصقيه هنا</p>
-      </div>
-      <div class="field">
         <label>رابط موقع العيادة على جوجل ماب (اختياري)</label>
         <input type="text" id="s-mapsLink" placeholder="الصق رابط المشاركة من تطبيق Maps" dir="ltr">
       </div>
@@ -562,9 +553,6 @@ function renderBookingUI() {
   document.getElementById('clinic-name').textContent = s.clinicName || 'العيادة';
   document.getElementById('clinic-subtitle').textContent = s.clinicSubtitle || '';
 
-  const logoImg = document.getElementById('clinic-logo');
-  if (s.clinicLogo) { logoImg.src = s.clinicLogo; logoImg.style.display = 'block'; }
-  else { logoImg.style.display = 'none'; }
 
   const mapsLinkEl = document.getElementById('maps-link');
   if (s.mapsLink) { mapsLinkEl.href = s.mapsLink; mapsLinkEl.style.display = 'inline-block'; }
@@ -935,10 +923,6 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     document.getElementById('s-vacationNote').value = s.vacationNote || '';
     document.getElementById('s-clinicWhatsapp').value = s.clinicWhatsapp || '';
     document.getElementById('s-mapsLink').value = s.mapsLink || '';
-    const logoPreview = document.getElementById('s-logo-preview');
-    document.getElementById('s-logoLink').value = s.clinicLogo || '';
-    if (s.clinicLogo) { logoPreview.src = s.clinicLogo; logoPreview.style.display = 'block'; }
-    else { logoPreview.style.display = 'none'; }
   } catch (err) {
     submitBtn.disabled = false;
     pinError.textContent = 'حصل خطأ في الاتصال، حاول تاني';
@@ -1006,13 +990,6 @@ document.getElementById('submit-recover').addEventListener('click', async () => 
   }
 });
 
-document.getElementById('s-logoLink').addEventListener('input', (e) => {
-  const preview = document.getElementById('s-logo-preview');
-  const url = e.target.value.trim();
-  if (url) { preview.src = url; preview.style.display = 'block'; }
-  else { preview.style.display = 'none'; }
-});
-
 document.getElementById('save-settings').addEventListener('click', async () => {
   const saveError = document.getElementById('save-error');
   const saveBtn = document.getElementById('save-settings');
@@ -1033,8 +1010,7 @@ document.getElementById('save-settings').addEventListener('click', async () => {
     vacationActive: document.getElementById('s-vacationActive').checked ? 'TRUE' : 'FALSE',
     vacationNote: document.getElementById('s-vacationNote').value.trim(),
     clinicWhatsapp: document.getElementById('s-clinicWhatsapp').value.trim(),
-    mapsLink: document.getElementById('s-mapsLink').value.trim(),
-    clinicLogo: document.getElementById('s-logoLink').value.trim()
+    mapsLink: document.getElementById('s-mapsLink').value.trim()
   };
 
   try {
