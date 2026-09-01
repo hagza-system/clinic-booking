@@ -141,7 +141,8 @@
 </div>
 
 <script>
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZAdzcDrSzC1BkMC5gH6HIt7_SrfnVqJWVqvyH4Cm5B9yWtHSn_prWnnj9TtIQXFhHsw/exec";
+const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
+const CLINIC_ID = "demo-clinic";
 
 let settings = {};
 let bookings = [];
@@ -181,7 +182,7 @@ function timeSortKey(t) {
 
 async function loadSettings() {
   try {
-    const res = await fetch(APPS_SCRIPT_URL);
+    const res = await fetch(API_URL + '?action=getPublicData&clinicId=' + encodeURIComponent(CLINIC_ID));
     const data = await res.json();
     settings = data.settings || {};
     applyTheme(settings.primaryColor || '#185fa5');
@@ -195,10 +196,10 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
   const btn = document.getElementById('submit-pin');
   btn.disabled = true;
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'getFullBookings', pin })
+      body: JSON.stringify({ action: 'getFullBookings', clinicId: CLINIC_ID, pin })
     });
     const result = await res.json();
     btn.disabled = false;
@@ -224,10 +225,10 @@ document.getElementById('pin-input').addEventListener('keydown', (e) => {
 });
 
 document.getElementById('refresh-btn').addEventListener('click', async () => {
-  const res = await fetch(APPS_SCRIPT_URL, {
+  const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'getFullBookings', pin: enteredPin })
+    body: JSON.stringify({ action: 'getFullBookings', clinicId: CLINIC_ID, pin: enteredPin })
   });
   const result = await res.json();
   if (result.success) { bookings = result.bookings; renderDashboard(); }
@@ -304,10 +305,10 @@ document.getElementById('check-block-btn').addEventListener('click', () => {
 
 async function saveBlockedDates() {
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'updateSettings', pin: enteredPin, settings: { blockedDates: blockedDates.join(',') } })
+      body: JSON.stringify({ action: 'updateSettings', clinicId: CLINIC_ID, pin: enteredPin, settings: { blockedDates: blockedDates.join(',') } })
     });
     const result = await res.json();
     return !!result.success;
@@ -496,10 +497,10 @@ async function doCleanupPastNow() {
   const btn = document.getElementById('cleanup-now-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'جاري المسح...'; }
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'cleanupPastBookingsNow', pin: enteredPin })
+      body: JSON.stringify({ action: 'cleanupPastBookingsNow', clinicId: CLINIC_ID, pin: enteredPin })
     });
     const result = await res.json();
     if (!result.success) {
@@ -612,8 +613,8 @@ document.getElementById('save-edit').addEventListener('click', async () => {
 
   const doctorFieldVisible = document.getElementById('edit-doctor-field').style.display !== 'none';
   const payload = {
-    action: 'updateBooking', pin: enteredPin,
-    timestamp: editingBooking.timestamp, day: editingBooking.day, time: editingBooking.time, phone: editingBooking.phone,
+    action: 'updateBooking', clinicId: CLINIC_ID, pin: enteredPin,
+    id: editingBooking.id,
     newDay: document.getElementById('edit-day').value,
     newTime: newTime,
     newService: document.getElementById('edit-service').value,
@@ -622,7 +623,7 @@ document.getElementById('save-edit').addEventListener('click', async () => {
   };
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
@@ -667,10 +668,10 @@ function showNotifyBanner(booking, message) {
 async function doCancel(booking) {
   if (!confirm(`متأكدة إنك عايزة تلغي حجز الساعة ${booking.time} يوم ${booking.day}؟`)) return;
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'cancelBooking', pin: enteredPin, timestamp: booking.timestamp, day: booking.day, time: booking.time, phone: booking.phone })
+      body: JSON.stringify({ action: 'cancelBooking', clinicId: CLINIC_ID, pin: enteredPin, id: booking.id })
     });
     const result = await res.json();
     if (!result.success) {
