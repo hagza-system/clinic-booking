@@ -528,12 +528,12 @@ async function loadData() {
 
     document.getElementById('loading').style.display = 'none';
 
-    if (appData.settings.subscriptionActive !== 'TRUE') {
+    if (appData.settings.subscriptionActive !== true && appData.settings.subscriptionActive !== 'TRUE') {
       document.getElementById('suspended-ui').style.display = 'block';
       document.getElementById('open-settings').style.display = 'none';
       return;
     }
-    if (appData.settings.vacationActive === 'TRUE') {
+    if (appData.settings.vacationActive === true || appData.settings.vacationActive === 'TRUE') {
       document.getElementById('vacation-ui').style.display = 'block';
       if (appData.settings.vacationNote) {
         document.getElementById('vacation-note-text').textContent = appData.settings.vacationNote;
@@ -921,7 +921,7 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     document.getElementById('s-endHour').value = s.endHour || 22;
     document.getElementById('s-maxPerSlot').value = s.maxPerSlot || 5;
     document.getElementById('s-primaryColor').value = s.primaryColor || '#185fa5';
-    document.getElementById('s-vacationActive').checked = s.vacationActive === 'TRUE';
+    document.getElementById('s-vacationActive').checked = s.vacationActive === true || s.vacationActive === 'TRUE';
     document.getElementById('s-vacationNote').value = s.vacationNote || '';
     document.getElementById('s-clinicWhatsapp').value = s.clinicWhatsapp || '';
     document.getElementById('s-mapsLink').value = s.mapsLink || '';
@@ -1009,7 +1009,7 @@ document.getElementById('save-settings').addEventListener('click', async () => {
     endHour: document.getElementById('s-endHour').value,
     maxPerSlot: document.getElementById('s-maxPerSlot').value,
     primaryColor: document.getElementById('s-primaryColor').value,
-    vacationActive: document.getElementById('s-vacationActive').checked ? 'TRUE' : 'FALSE',
+    vacationActive: document.getElementById('s-vacationActive').checked,
     vacationNote: document.getElementById('s-vacationNote').value.trim(),
     clinicWhatsapp: document.getElementById('s-clinicWhatsapp').value.trim(),
     mapsLink: document.getElementById('s-mapsLink').value.trim()
