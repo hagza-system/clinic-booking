@@ -142,7 +142,8 @@
 
 <script>
 const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
-const CLINIC_ID = "demo-clinic";
+// معرّف العيادة بيتقرأ من رابط الصفحة (?clinic=xxx)، ولو مفيش بياخد demo-clinic افتراضياً
+const CLINIC_ID = new URLSearchParams(location.search).get('clinic') || "demo-clinic";
 
 let settings = {};
 let bookings = [];
