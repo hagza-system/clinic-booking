@@ -402,8 +402,8 @@
 <script>
 // ====== رابط السيرفر الموحّد (نفس الرابط لكل العملاء) - غيّر بس معرّف العيادة تحت ======
 const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
-// ====== معرّف العيادة بتاعتك - كل عيادة ليها معرّف مختلف بترجعه لوحة التحكم الرئيسية عند إضافتها ======
-const CLINIC_ID = "demo-clinic";
+// ====== معرّف العيادة بتاعتك - بيتقرأ من رابط الصفحة (?clinic=xxx)، ولو مفيش بياخد demo-clinic افتراضياً ======
+const CLINIC_ID = new URLSearchParams(location.search).get('clinic') || "demo-clinic";
 
 let appData = { settings: {}, bookings: [] };
 let selectedService = null;
