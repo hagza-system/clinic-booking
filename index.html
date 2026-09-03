@@ -776,7 +776,7 @@ function renderTimeSlots() {
 
 // ====== التحكم في خطوات المعالج ======
 function stepIsValid(n) {
-  if (n === 1) return !!selectedService;
+  if (n === 1) return !!selectedService && (!doctorsEnabled || !!selectedDoctor);
   if (n === 2) return !!selectedDay;
   if (n === 3) return !!selectedTime;
   if (n === 4) return /^01[0-9]{9}$/.test(document.getElementById('phone').value.trim());
