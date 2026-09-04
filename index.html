@@ -413,6 +413,15 @@
         <label>رابط موقع العيادة على جوجل ماب (اختياري)</label>
         <input type="text" id="s-mapsLink" placeholder="الصق رابط المشاركة من تطبيق Maps" dir="ltr">
       </div>
+      <div class="field">
+        <label>سؤال الأمان (يستخدم لو نسيت كلمة السر)</label>
+        <input type="text" id="s-securityQuestion" placeholder="مثال: اسم أول عيادة اشتغلت فيها؟">
+      </div>
+      <div class="field">
+        <label>إجابة سؤال الأمان</label>
+        <input type="text" id="s-securityAnswer" placeholder="اكتب الإجابة">
+        <p class="hint">لو نسيت كلمة السر والإجابة مع بعض، تقدر تتواصل مع مطوّر النظام يديك القيم من عنده.</p>
+      </div>
       <div class="modal-actions">
         <button class="btn-secondary" id="cancel-settings">إلغاء</button>
         <button class="btn-primary" id="save-settings">حفظ التعديلات</button>
@@ -1028,6 +1037,9 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     document.getElementById('pin-step').style.display = 'none';
     document.getElementById('settings-form').style.display = 'block';
 
+    document.getElementById('s-securityQuestion').value = result.securityQuestion || '';
+    document.getElementById('s-securityAnswer').value = result.securityAnswer || '';
+
     const s = appData.settings;
     document.getElementById('s-clinicName').value = s.clinicName || '';
     document.getElementById('s-clinicSubtitle').value = s.clinicSubtitle || '';
@@ -1138,7 +1150,9 @@ document.getElementById('save-settings').addEventListener('click', async () => {
     vacationActive: document.getElementById('s-vacationActive').checked,
     vacationNote: document.getElementById('s-vacationNote').value.trim(),
     clinicWhatsapp: document.getElementById('s-clinicWhatsapp').value.trim(),
-    mapsLink: document.getElementById('s-mapsLink').value.trim()
+    mapsLink: document.getElementById('s-mapsLink').value.trim(),
+    securityQuestion: document.getElementById('s-securityQuestion').value.trim(),
+    securityAnswer: document.getElementById('s-securityAnswer').value.trim()
   };
 
   try {
