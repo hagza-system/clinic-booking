@@ -1080,11 +1080,11 @@ document.getElementById('forgot-pin-link').addEventListener('click', () => {
   document.getElementById('recover-new-pin').value = '';
   document.getElementById('recover-error').style.display = 'none';
 
-  const ownerWhatsapp = toWhatsappNumber(appData.settings.ownerWhatsapp);
+  const developerWhatsapp = toWhatsappNumber(appData.settings.developerWhatsapp);
   const clinicName = appData.settings.clinicName || 'العيادة';
   const waMsg = encodeURIComponent(`مرحباً، أنا نسيت كلمة سر لوحة تحكم "${clinicName}" ومحتاج/ة أسترجعها.`);
-  document.getElementById('whatsapp-recover-link').href = ownerWhatsapp
-    ? `https://wa.me/${ownerWhatsapp}?text=${waMsg}`
+  document.getElementById('whatsapp-recover-link').href = developerWhatsapp
+    ? `https://wa.me/${developerWhatsapp}?text=${waMsg}`
     : '#';
 });
 
