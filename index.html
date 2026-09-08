@@ -43,6 +43,14 @@
     transition: background .15s;
   }
   .settings-link:hover { background: rgba(255,255,255,.3); }
+  .lang-select {
+    position: absolute; top: 14px; right: 16px; font-size: 12px; font-weight: 600; font-family: inherit;
+    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.35); border-radius: 9px;
+    height: 30px; padding: 0 6px; cursor: pointer; color: #fff; opacity: .95; transition: background .15s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .lang-select:hover { background: rgba(255,255,255,.3); }
+  .lang-select option { color: #23262b; }
   .mybooking-link {
     display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
     margin-top: 16px; padding: 9px 14px; font-size: 12.5px; font-weight: 600; font-family: inherit;
@@ -196,14 +204,21 @@
 
   <div class="ticket-header">
     <button class="settings-link" id="open-settings" title="إعدادات العيادة">⚙️</button>
-    <div style="display:flex; align-items:center; gap:12px; padding-left:34px;">
+    <select class="lang-select" id="lang-select" title="اللغة / Language" aria-label="اللغة / Language">
+      <option value="ar">🌐 ع</option>
+      <option value="en">🌐 EN</option>
+      <option value="fr">🌐 FR</option>
+      <option value="es">🌐 ES</option>
+      <option value="it">🌐 IT</option>
+    </select>
+    <div style="display:flex; align-items:center; gap:12px; padding-left:34px; padding-right:34px;">
       <div style="min-width:0;">
         <h1 id="clinic-name" style="padding-left:0;">—</h1>
         <p id="clinic-subtitle" style="padding-left:0;">—</p>
       </div>
     </div>
-    <button class="mybooking-link" id="open-mybooking">🔍 لتعديل أو إلغاء حجزك</button>
-    <a id="maps-link" href="#" target="_blank" rel="noopener" style="display:none; font-size:12px; color:#fff; text-decoration:underline; margin-top:6px;">📍 موقع العيادة على الماب</a>
+    <button class="mybooking-link" id="open-mybooking" data-i18n="myBookingLink">🔍 لتعديل أو إلغاء حجزك</button>
+    <a id="maps-link" href="#" target="_blank" rel="noopener" style="display:none; font-size:12px; color:#fff; text-decoration:underline; margin-top:6px;" data-i18n="mapsLink">📍 موقع العيادة على الماب</a>
     <div class="progress-wrap">
       <svg class="progress-arc" viewBox="0 0 280 40" preserveAspectRatio="none">
         <path class="arc-track" d="M10,32 Q140,4 270,32"></path>
@@ -220,58 +235,58 @@
   <div class="perforation"><span></span></div>
 
   <div class="ticket-body">
-    <div class="loading" id="loading">جاري تحميل البيانات...</div>
+    <div class="loading" id="loading" data-i18n="loading">جاري تحميل البيانات...</div>
 
     <div class="suspended-ui" id="suspended-ui" style="display:none;">
       <div class="icon">⏸️</div>
-      <p>الخدمة متوقفة مؤقتاً</p>
-      <p>من فضلك تواصل مع العيادة لمعرفة التفاصيل</p>
+      <p data-i18n="suspendedTitle">الخدمة متوقفة مؤقتاً</p>
+      <p data-i18n="suspendedBody">من فضلك تواصل مع العيادة لمعرفة التفاصيل</p>
     </div>
 
     <div class="suspended-ui" id="vacation-ui" style="display:none;">
       <div class="icon">🏖️</div>
-      <p>العيادة في إجازة حالياً</p>
-      <p id="vacation-note-text">هنرجع نستقبل حجوزات جديدة قريباً</p>
+      <p data-i18n="vacationTitle">العيادة في إجازة حالياً</p>
+      <p id="vacation-note-text" data-i18n="vacationBody">هنرجع نستقبل حجوزات جديدة قريباً</p>
     </div>
 
     <div id="booking-ui" style="display:none;">
       <div class="step-viewport">
         <section class="step" data-step="1">
           <div id="doctor-section" style="display:none; margin-bottom:20px;">
-            <p class="step-title">اختار الدكتور</p>
+            <p class="step-title" data-i18n="stepChooseDoctor">اختار الدكتور</p>
             <div class="chip-grid" id="doctor-chips"></div>
           </div>
-          <p class="step-title" id="service-step-title">اختار نوع الخدمة</p>
+          <p class="step-title" id="service-step-title" data-i18n="stepChooseService">اختار نوع الخدمة</p>
           <div class="chip-grid" id="service-chips"></div>
         </section>
 
         <section class="step" data-step="2">
-          <p class="step-title">اختار التاريخ</p>
+          <p class="step-title" data-i18n="stepChooseDay">اختار التاريخ</p>
           <div class="chip-grid" id="day-chips"></div>
         </section>
 
         <section class="step" data-step="3">
-          <p class="step-title">اختار الوقت</p>
+          <p class="step-title" data-i18n="stepChooseTime">اختار الوقت</p>
           <div class="chip-grid" id="time-chips"></div>
         </section>
 
         <section class="step" data-step="4">
-          <p class="step-title">اسمك</p>
-          <input type="text" id="patient-name" placeholder="اكتب اسمك">
-          <p class="step-title" style="margin-top:16px;">رقم الموبايل</p>
+          <p class="step-title" data-i18n="stepYourName">اسمك</p>
+          <input type="text" id="patient-name" placeholder="اكتب اسمك" data-i18n-placeholder="namePlaceholder">
+          <p class="step-title" style="margin-top:16px;" data-i18n="stepYourPhone">رقم الموبايل</p>
           <input type="tel" id="phone" placeholder="01xxxxxxxxx" inputmode="numeric">
           <p class="error-msg" id="error-msg"></p>
         </section>
 
         <section class="step" data-step="5">
-          <p class="step-title">راجع بياناتك وأكّد الحجز</p>
+          <p class="step-title" data-i18n="stepReview">راجع بياناتك وأكّد الحجز</p>
           <div class="summary-card">
-            <div class="summary-row" id="sum-doctor-row" style="display:none;"><span>الدكتور</span><b id="sum-doctor">—</b></div>
-            <div class="summary-row"><span>الاسم</span><b id="sum-name">—</b></div>
-            <div class="summary-row"><span>الخدمة</span><b id="sum-service">—</b></div>
-            <div class="summary-row"><span>التاريخ</span><b id="sum-day">—</b></div>
-            <div class="summary-row"><span>الوقت</span><b id="sum-time">—</b></div>
-            <div class="summary-row"><span>الموبايل</span><b id="sum-phone">—</b></div>
+            <div class="summary-row" id="sum-doctor-row" style="display:none;"><span data-i18n="labelDoctor">الدكتور</span><b id="sum-doctor">—</b></div>
+            <div class="summary-row"><span data-i18n="labelName">الاسم</span><b id="sum-name">—</b></div>
+            <div class="summary-row"><span data-i18n="labelService">الخدمة</span><b id="sum-service">—</b></div>
+            <div class="summary-row"><span data-i18n="labelDay">التاريخ</span><b id="sum-day">—</b></div>
+            <div class="summary-row"><span data-i18n="labelTime">الوقت</span><b id="sum-time">—</b></div>
+            <div class="summary-row"><span data-i18n="labelPhone">الموبايل</span><b id="sum-phone">—</b></div>
           </div>
           <p class="error-msg" id="confirm-error"></p>
         </section>
@@ -282,39 +297,39 @@
               <circle cx="26" cy="26" r="23"></circle>
               <path d="M14 27l7 7 16-16"></path>
             </svg>
-            <h2>تم تأكيد حجزك</h2>
+            <h2 data-i18n="successTitle">تم تأكيد حجزك</h2>
             <p class="ref-code" id="ref-code">رقم الحجز #—</p>
           </div>
           <div class="receipt">
-            <div class="receipt-row" id="fin-doctor-row" style="display:none;"><span>الدكتور</span><b id="fin-doctor">—</b></div>
-            <div class="receipt-row"><span>الاسم</span><b id="fin-name">—</b></div>
-            <div class="receipt-row"><span>الخدمة</span><b id="fin-service">—</b></div>
-            <div class="receipt-row"><span>التاريخ</span><b id="fin-day">—</b></div>
-            <div class="receipt-row"><span>الوقت</span><b id="fin-time">—</b></div>
-            <div class="receipt-row"><span>الموبايل</span><b id="fin-phone">—</b></div>
+            <div class="receipt-row" id="fin-doctor-row" style="display:none;"><span data-i18n="labelDoctor">الدكتور</span><b id="fin-doctor">—</b></div>
+            <div class="receipt-row"><span data-i18n="labelName">الاسم</span><b id="fin-name">—</b></div>
+            <div class="receipt-row"><span data-i18n="labelService">الخدمة</span><b id="fin-service">—</b></div>
+            <div class="receipt-row"><span data-i18n="labelDay">التاريخ</span><b id="fin-day">—</b></div>
+            <div class="receipt-row"><span data-i18n="labelTime">الوقت</span><b id="fin-time">—</b></div>
+            <div class="receipt-row"><span data-i18n="labelPhone">الموبايل</span><b id="fin-phone">—</b></div>
           </div>
-          <p class="footer-hint">هنكون في انتظارك في الموعد المحدد. لو احتجت تعدّل أو تلغي، دوس على "لتعديل أو إلغاء حجزك" فوق في أي وقت.</p>
-          <a href="#" id="whatsapp-confirm-link" target="_blank" rel="noopener" style="display:none; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; background:#25D366; color:#fff; text-decoration:none; font-size:14px; font-weight:600; margin-top:14px;">
-            📱 أرسلي تأكيد الحجز للعيادة على واتساب
+          <p class="footer-hint" data-i18n="footerHint">هنكون في انتظارك في الموعد المحدد. لو احتجت تعدّل أو تلغي، دوس على "لتعديل أو إلغاء حجزك" فوق في أي وقت.</p>
+          <a href="#" id="whatsapp-confirm-link" target="_blank" rel="noopener" style="display:none; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; background:#25D366; color:#fff; text-decoration:none; font-size:14px; font-weight:600; margin-top:14px;" data-i18n="sendClinicConfirm">
+            📱 أرسل تأكيد الحجز للعيادة على واتساب
           </a>
           <a href="#" id="whatsapp-doctor-link" target="_blank" rel="noopener" style="display:none; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; background:#128C7E; color:#fff; text-decoration:none; font-size:14px; font-weight:600; margin-top:10px;">
-            📱 أرسلي تأكيد الحجز للدكتور
+            📱 أرسل تأكيد الحجز للدكتور
           </a>
-          <button type="button" id="save-image-btn" style="display:flex; width:100%; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; background:#fff; border:1.5px solid var(--line); color:var(--ink); font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; margin-top:10px;">
-            📷 احفظي تفاصيل الحجز كصورة
+          <button type="button" id="save-image-btn" style="display:flex; width:100%; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; background:#fff; border:1.5px solid var(--line); color:var(--ink); font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; margin-top:10px;" data-i18n="saveImage">
+            📷 احفظ تفاصيل الحجز كصورة
           </button>
-          <a href="#" id="calendar-link" rel="noopener" style="display:none; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; background:#fff; border:1.5px solid var(--line); color:var(--ink); text-decoration:none; font-family:inherit; font-size:13.5px; font-weight:600; margin-top:10px;">
-            📅 ضيفي الموعد لتقويم تليفوني
+          <a href="#" id="calendar-link" rel="noopener" style="display:none; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; background:#fff; border:1.5px solid var(--line); color:var(--ink); text-decoration:none; font-family:inherit; font-size:13.5px; font-weight:600; margin-top:10px;" data-i18n="addToCalendar">
+            📅 أضف الموعد للتقويم
           </a>
         </section>
       </div>
 
       <div class="nav-row" id="nav-row">
-        <button type="button" class="btn-ghost" id="btn-back">رجوع</button>
-        <button type="button" class="btn-cta" id="btn-next">التالي</button>
+        <button type="button" class="btn-ghost" id="btn-back" data-i18n="btnBack">رجوع</button>
+        <button type="button" class="btn-cta" id="btn-next" data-i18n="btnNext">التالي</button>
       </div>
 
-      <p class="footer-note">مدعوم بنظام حجزة HAGZA لإدارة حجوزات العيادات</p>
+      <p class="footer-note" data-i18n="footerNote">مدعوم بنظام حجزة HAGZA لإدارة حجوزات العيادات</p>
     </div>
   </div>
 
@@ -439,45 +454,45 @@
 <!-- حجوزاتي السابقة -->
 <div class="modal-overlay" id="mybooking-modal">
   <div class="modal">
-    <h2>حجزك السابق</h2>
+    <h2 data-i18n="mbTitle">حجزك السابق</h2>
 
     <div id="mb-search-step">
       <div class="field">
-        <label>رقم الموبايل اللي حجزت بيه</label>
+        <label data-i18n="mbPhoneLabel">رقم الموبايل اللي حجزت بيه</label>
         <input type="tel" id="mb-phone" placeholder="01xxxxxxxxx" inputmode="numeric">
         <p class="error-msg" id="mb-search-error"></p>
       </div>
       <div class="modal-actions">
-        <button class="btn-secondary" id="mb-cancel-search">إلغاء</button>
-        <button class="btn-primary" id="mb-submit-search">دور على حجزي</button>
+        <button class="btn-secondary" id="mb-cancel-search" data-i18n="mbCancelBtn">إلغاء</button>
+        <button class="btn-primary" id="mb-submit-search" data-i18n="mbSearchBtn">دور على حجزي</button>
       </div>
     </div>
 
     <div id="mb-list-step" style="display:none;">
       <div id="mb-list"></div>
       <div class="modal-actions">
-        <button class="btn-secondary" id="mb-back-to-search">دور برقم تاني</button>
-        <button class="btn-secondary" id="mb-close-list">قفل</button>
+        <button class="btn-secondary" id="mb-back-to-search" data-i18n="mbBackToSearch">دور برقم تاني</button>
+        <button class="btn-secondary" id="mb-close-list" data-i18n="mbCloseList">قفل</button>
       </div>
     </div>
 
     <div id="mb-edit-step" style="display:none;">
-      <p class="step-title" style="margin-bottom:10px;">اختار اليوم</p>
+      <p class="step-title" style="margin-bottom:10px;" data-i18n="stepChooseDay">اختار اليوم</p>
       <div class="chip-grid" id="mb-day-chips" style="margin-bottom:16px;"></div>
-      <p class="step-title" style="margin-bottom:10px;">اختار الوقت</p>
+      <p class="step-title" style="margin-bottom:10px;" data-i18n="stepChooseTime">اختار الوقت</p>
       <div class="chip-grid" id="mb-time-chips"></div>
       <p class="error-msg" id="mb-edit-error"></p>
       <div class="modal-actions">
-        <button class="btn-secondary" id="mb-cancel-edit">رجوع</button>
-        <button class="btn-primary" id="mb-save-edit">احفظ التعديل</button>
+        <button class="btn-secondary" id="mb-cancel-edit" data-i18n="btnBack">رجوع</button>
+        <button class="btn-primary" id="mb-save-edit" data-i18n="mbSaveEdit">احفظ التعديل</button>
       </div>
     </div>
 
     <div id="mb-confirm-cancel-step" style="display:none;">
-      <p style="font-size:14px; margin-bottom:18px;">متأكد إنك عايز تلغي الحجز ده؟</p>
+      <p style="font-size:14px; margin-bottom:18px;" data-i18n="mbConfirmCancelText">متأكد إنك عايز تلغي الحجز ده؟</p>
       <div class="modal-actions">
-        <button class="btn-secondary" id="mb-abort-cancel">تراجع</button>
-        <button class="btn-primary" id="mb-confirm-cancel" style="background:#b3392f;">اه، ألغي الحجز</button>
+        <button class="btn-secondary" id="mb-abort-cancel" data-i18n="mbAbortCancel">تراجع</button>
+        <button class="btn-primary" id="mb-confirm-cancel" style="background:#b3392f;" data-i18n="mbConfirmCancelBtn">اه، ألغي الحجز</button>
       </div>
       <p class="error-msg" id="mb-cancel-error"></p>
     </div>
@@ -567,6 +582,21 @@ function formatDateLabel(date) { // للعرض: "السبت 5 سبتمبر"
 function formatDateKey(date) { // للتخزين والمطابقة (فيها السنة عشان مفيش أي لبس)
   return `${ARABIC_DAY_NAMES[date.getDay()]} ${date.getDate()} ${ARABIC_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
+// بيرجّع formatDateKey لتاريخ Date تاني، عشان نقدر نعرض تاريخ حجز قديم (جاي من السيرفر كنص عربي) باللغة المختارة
+function parseArabicDateKeyToDate(dateKey) {
+  const parts = (dateKey || '').trim().split(/\s+/);
+  if (parts.length < 4) return null;
+  const day = parseInt(parts[1], 10);
+  const monthIdx = ARABIC_MONTHS.indexOf(parts[2]);
+  const year = parseInt(parts[3], 10);
+  if (isNaN(day) || monthIdx === -1 || isNaN(year)) return null;
+  return new Date(year, monthIdx, day);
+}
+function displayDay(dateKey) {
+  const d = parseArabicDateKeyToDate(dateKey);
+  return d ? formatDateLabelLocalized(d, currentLang) : dateKey;
+}
+function displayTime(timeStr) { return formatTimeLocalized(timeStr, currentLang); }
 
 // بيرجع تواريخ فعلية جاية (مش أسماء أيام متكررة) للأيام اللي العيادة شغالة فيها
 function getUpcomingDates(allowedDayNames, windowDays) {
@@ -589,6 +619,17 @@ function parseTimeToHM(timeStr) {
   if (m[2] === 'م' && h !== 12) h += 12;
   if (m[2] === 'ص' && h === 12) h = 0;
   return { h, m: 0 };
+}
+
+// بيحوّل الأرقام العربية (٠١٢...) والفارسية (۰۱۲...) لأرقام إنجليزية عادية، عشان حقل الموبايل يقبل الاتنين
+function normalizeDigits(str) {
+  const easternArabic = '٠١٢٣٤٥٦٧٨٩';
+  const persian = '۰۱۲۳۴۵۶۷۸۹';
+  return String(str || '').replace(/[٠-٩۰-۹]/g, (d) => {
+    let idx = easternArabic.indexOf(d);
+    if (idx === -1) idx = persian.indexOf(d);
+    return idx === -1 ? d : String(idx);
+  });
 }
 
 // بيصيغ التاريخ بصيغة UTC اللي ملف ICS محتاجها (Z في الآخر يعني توقيت UTC)
@@ -623,7 +664,302 @@ function buildCalendarLink(clinicName, service, dateObj, timeStr, mapsLink) {
     'LOCATION:' + location,
     'END:VEVENT', 'END:VCALENDAR',
   ].join('\r\n');
-  return 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+  // بنستخدم Blob + Object URL بدل data: URI لأن متصفحات الموبايل الحديثة (خصوصاً Chrome Android)
+  // بتمنع فتح روابط data: مباشرة كإجراء أمان، وده كان سبب إن الزرار ميعملش حاجة
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  return URL.createObjectURL(blob);
+}
+
+// ====== الترجمة (اللغة بتغيّر شكل الواجهة الثابت بس - أسماء الخدمات/الدكاترة/العيادة زي ما العيادة كاتباها بالظبط) ======
+const I18N = {
+  ar: {
+    dayNames: ARABIC_DAY_NAMES,
+    monthNames: ARABIC_MONTHS, am: 'ص', pm: 'م',
+    settingsTitle: 'إعدادات العيادة', myBookingLink: '🔍 لتعديل أو إلغاء حجزك', mapsLink: '📍 موقع العيادة على الماب',
+    loading: 'جاري تحميل البيانات...', suspendedTitle: 'الخدمة متوقفة مؤقتاً', suspendedBody: 'من فضلك تواصل مع العيادة لمعرفة التفاصيل',
+    vacationTitle: 'العيادة في إجازة حالياً', vacationBody: 'هنرجع نستقبل حجوزات جديدة قريباً',
+    stepChooseDoctor: 'اختار الدكتور', stepChooseService: 'اختار نوع الخدمة', stepChooseDay: 'اختار التاريخ', stepChooseTime: 'اختار الوقت',
+    stepYourName: 'اسمك', stepYourPhone: 'رقم الموبايل', stepReview: 'راجع بياناتك وأكّد الحجز', namePlaceholder: 'اكتب اسمك',
+    labelDoctor: 'الدكتور', labelName: 'الاسم', labelService: 'الخدمة', labelDay: 'التاريخ', labelTime: 'الوقت', labelPhone: 'الموبايل',
+    btnBack: 'رجوع', btnNext: 'التالي', btnConfirmBooking: 'تأكيد الحجز', btnBooking: 'جاري الحجز...',
+    successTitle: 'تم تأكيد حجزك', refCodePrefix: 'رقم الحجز #',
+    footerHint: 'هنكون في انتظارك في الموعد المحدد. لو احتجت تعدّل أو تلغي، دوس على "لتعديل أو إلغاء حجزك" فوق في أي وقت.',
+    sendClinicConfirm: '📱 أرسل تأكيد الحجز للعيادة على واتساب', sendDoctorConfirmPrefix: '📱 أرسل تأكيد الحجز لـ ', sendDoctorConfirmSuffix: ' على واتساب',
+    saveImage: '📷 احفظ تفاصيل الحجز كصورة', savingImage: 'جاري التجهيز...', addToCalendar: '📅 أضف الموعد للتقويم',
+    footerNote: 'مدعوم بنظام حجزة HAGZA لإدارة حجوزات العيادات',
+    errFillName: 'من فضلك اكتب اسمك', errPhoneFormat: 'اكتب رقم موبايل صحيح (01xxxxxxxxx)', errGeneric: 'حصل خطأ، حاول تاني', errConnection: 'حصل خطأ في الاتصال، حاول تاني',
+    pastSuffix: ' (فات)', fullSuffix: ' (مكتمل)',
+    mbTitle: 'حجزك السابق', mbPhoneLabel: 'رقم الموبايل اللي حجزت بيه', mbCancelBtn: 'إلغاء', mbSearchBtn: 'دور على حجزي', mbSearching: 'جاري البحث...',
+    mbBackToSearch: 'دور برقم تاني', mbCloseList: 'قفل', mbEmpty: 'مفيش حجوزات جاية لقيتها بالرقم ده',
+    mbEdit: '✏️ تعديل الموعد', mbCancelAction: '❌ إلغاء', mbSaveEdit: 'احفظ التعديل', mbSaving: 'جاري الحفظ...', mbChooseFirst: 'اختار يوم ووقت الأول',
+    mbConfirmCancelText: 'متأكد إنك عايز تلغي الحجز ده؟', mbAbortCancel: 'تراجع', mbConfirmCancelBtn: 'اه، ألغي الحجز', mbCanceling: 'جاري الإلغاء...',
+    mbEditedAlert: 'تم تعديل حجزك بنجاح ✅',
+  },
+  en: {
+    dayNames: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    monthNames: ['January','February','March','April','May','June','July','August','September','October','November','December'], am: 'AM', pm: 'PM',
+    settingsTitle: 'Clinic settings', myBookingLink: '🔍 Edit or cancel your booking', mapsLink: '📍 Clinic location on the map',
+    loading: 'Loading data...', suspendedTitle: 'Booking temporarily paused', suspendedBody: 'Please contact the clinic for details',
+    vacationTitle: 'The clinic is on vacation', vacationBody: "We'll be back accepting bookings soon",
+    stepChooseDoctor: 'Choose a doctor', stepChooseService: 'Choose a service', stepChooseDay: 'Choose a date', stepChooseTime: 'Choose a time',
+    stepYourName: 'Your name', stepYourPhone: 'Mobile number', stepReview: 'Review your details and confirm', namePlaceholder: 'Enter your name',
+    labelDoctor: 'Doctor', labelName: 'Name', labelService: 'Service', labelDay: 'Date', labelTime: 'Time', labelPhone: 'Mobile',
+    btnBack: 'Back', btnNext: 'Next', btnConfirmBooking: 'Confirm booking', btnBooking: 'Booking...',
+    successTitle: 'Your booking is confirmed', refCodePrefix: 'Booking #',
+    footerHint: 'We\'ll be waiting for you at the scheduled time. If you need to change or cancel, tap "Edit or cancel your booking" above any time.',
+    sendClinicConfirm: '📱 Send booking confirmation to the clinic on WhatsApp', sendDoctorConfirmPrefix: '📱 Send booking confirmation to ', sendDoctorConfirmSuffix: ' on WhatsApp',
+    saveImage: '📷 Save booking details as an image', savingImage: 'Preparing...', addToCalendar: '📅 Add to phone calendar',
+    footerNote: 'Powered by HAGZA clinic booking system',
+    errFillName: 'Please enter your name', errPhoneFormat: 'Enter a valid mobile number (01xxxxxxxxx)', errGeneric: 'Something went wrong, please try again', errConnection: 'Connection error, please try again',
+    pastSuffix: ' (past)', fullSuffix: ' (full)',
+    mbTitle: 'Your booking', mbPhoneLabel: 'The mobile number you booked with', mbCancelBtn: 'Cancel', mbSearchBtn: 'Find my booking', mbSearching: 'Searching...',
+    mbBackToSearch: 'Search another number', mbCloseList: 'Close', mbEmpty: "No upcoming bookings found with this number",
+    mbEdit: '✏️ Edit appointment', mbCancelAction: '❌ Cancel', mbSaveEdit: 'Save changes', mbSaving: 'Saving...', mbChooseFirst: 'Choose a day and time first',
+    mbConfirmCancelText: 'Are you sure you want to cancel this booking?', mbAbortCancel: 'Go back', mbConfirmCancelBtn: 'Yes, cancel it', mbCanceling: 'Cancelling...',
+    mbEditedAlert: 'Your booking was updated successfully ✅',
+  },
+  fr: {
+    dayNames: ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],
+    monthNames: ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'], am: 'AM', pm: 'PM',
+    settingsTitle: 'Paramètres de la clinique', myBookingLink: '🔍 Modifier ou annuler votre rendez-vous', mapsLink: '📍 Localisation de la clinique',
+    loading: 'Chargement des données...', suspendedTitle: 'Réservations suspendues temporairement', suspendedBody: 'Veuillez contacter la clinique pour plus de détails',
+    vacationTitle: 'La clinique est en congé', vacationBody: 'Nous reprendrons les réservations bientôt',
+    stepChooseDoctor: 'Choisissez un médecin', stepChooseService: 'Choisissez un service', stepChooseDay: 'Choisissez une date', stepChooseTime: "Choisissez l'heure",
+    stepYourName: 'Votre nom', stepYourPhone: 'Numéro de mobile', stepReview: 'Vérifiez vos informations et confirmez', namePlaceholder: 'Entrez votre nom',
+    labelDoctor: 'Médecin', labelName: 'Nom', labelService: 'Service', labelDay: 'Date', labelTime: 'Heure', labelPhone: 'Mobile',
+    btnBack: 'Retour', btnNext: 'Suivant', btnConfirmBooking: 'Confirmer', btnBooking: 'Réservation...',
+    successTitle: 'Votre rendez-vous est confirmé', refCodePrefix: 'Réservation n° ',
+    footerHint: 'Nous vous attendrons à l\'heure prévue. Pour modifier ou annuler, appuyez sur "Modifier ou annuler votre rendez-vous" en haut à tout moment.',
+    sendClinicConfirm: '📱 Envoyer la confirmation à la clinique sur WhatsApp', sendDoctorConfirmPrefix: '📱 Envoyer la confirmation à ', sendDoctorConfirmSuffix: ' sur WhatsApp',
+    saveImage: '📷 Enregistrer les détails en image', savingImage: 'Préparation...', addToCalendar: '📅 Ajouter au calendrier du téléphone',
+    footerNote: 'Propulsé par le système de réservation HAGZA',
+    errFillName: 'Veuillez entrer votre nom', errPhoneFormat: 'Entrez un numéro de mobile valide (01xxxxxxxxx)', errGeneric: "Une erreur s'est produite, réessayez", errConnection: 'Erreur de connexion, réessayez',
+    pastSuffix: ' (passé)', fullSuffix: ' (complet)',
+    mbTitle: 'Votre rendez-vous', mbPhoneLabel: 'Le numéro utilisé pour la réservation', mbCancelBtn: 'Annuler', mbSearchBtn: 'Rechercher', mbSearching: 'Recherche...',
+    mbBackToSearch: 'Autre numéro', mbCloseList: 'Fermer', mbEmpty: 'Aucun rendez-vous à venir trouvé avec ce numéro',
+    mbEdit: '✏️ Modifier le rendez-vous', mbCancelAction: '❌ Annuler', mbSaveEdit: 'Enregistrer', mbSaving: 'Enregistrement...', mbChooseFirst: "Choisissez d'abord un jour et une heure",
+    mbConfirmCancelText: 'Voulez-vous vraiment annuler ce rendez-vous ?', mbAbortCancel: 'Revenir', mbConfirmCancelBtn: 'Oui, annuler', mbCanceling: 'Annulation...',
+    mbEditedAlert: 'Votre rendez-vous a été modifié avec succès ✅',
+  },
+  es: {
+    dayNames: ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],
+    monthNames: ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'], am: 'AM', pm: 'PM',
+    settingsTitle: 'Configuración de la clínica', myBookingLink: '🔍 Editar o cancelar tu cita', mapsLink: '📍 Ubicación de la clínica',
+    loading: 'Cargando datos...', suspendedTitle: 'Reservas pausadas temporalmente', suspendedBody: 'Por favor contacta a la clínica para más detalles',
+    vacationTitle: 'La clínica está de vacaciones', vacationBody: 'Volveremos a aceptar citas pronto',
+    stepChooseDoctor: 'Elige un doctor', stepChooseService: 'Elige un servicio', stepChooseDay: 'Elige una fecha', stepChooseTime: 'Elige una hora',
+    stepYourName: 'Tu nombre', stepYourPhone: 'Número de móvil', stepReview: 'Revisa tus datos y confirma', namePlaceholder: 'Escribe tu nombre',
+    labelDoctor: 'Doctor', labelName: 'Nombre', labelService: 'Servicio', labelDay: 'Fecha', labelTime: 'Hora', labelPhone: 'Móvil',
+    btnBack: 'Atrás', btnNext: 'Siguiente', btnConfirmBooking: 'Confirmar cita', btnBooking: 'Reservando...',
+    successTitle: 'Tu cita está confirmada', refCodePrefix: 'Cita n.º ',
+    footerHint: 'Te esperaremos a la hora indicada. Si necesitas cambiar o cancelar, toca "Editar o cancelar tu cita" arriba en cualquier momento.',
+    sendClinicConfirm: '📱 Enviar confirmación a la clínica por WhatsApp', sendDoctorConfirmPrefix: '📱 Enviar confirmación a ', sendDoctorConfirmSuffix: ' por WhatsApp',
+    saveImage: '📷 Guardar los detalles como imagen', savingImage: 'Preparando...', addToCalendar: '📅 Añadir al calendario del teléfono',
+    footerNote: 'Desarrollado con el sistema de reservas HAGZA',
+    errFillName: 'Por favor escribe tu nombre', errPhoneFormat: 'Escribe un número de móvil válido (01xxxxxxxxx)', errGeneric: 'Ocurrió un error, inténtalo de nuevo', errConnection: 'Error de conexión, inténtalo de nuevo',
+    pastSuffix: ' (pasado)', fullSuffix: ' (completo)',
+    mbTitle: 'Tu cita', mbPhoneLabel: 'El número con el que reservaste', mbCancelBtn: 'Cancelar', mbSearchBtn: 'Buscar mi cita', mbSearching: 'Buscando...',
+    mbBackToSearch: 'Buscar con otro número', mbCloseList: 'Cerrar', mbEmpty: 'No se encontraron citas próximas con este número',
+    mbEdit: '✏️ Editar cita', mbCancelAction: '❌ Cancelar', mbSaveEdit: 'Guardar cambios', mbSaving: 'Guardando...', mbChooseFirst: 'Elige primero un día y una hora',
+    mbConfirmCancelText: '¿Seguro que quieres cancelar esta cita?', mbAbortCancel: 'Volver', mbConfirmCancelBtn: 'Sí, cancelar', mbCanceling: 'Cancelando...',
+    mbEditedAlert: 'Tu cita se actualizó correctamente ✅',
+  },
+  it: {
+    dayNames: ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'],
+    monthNames: ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'], am: 'AM', pm: 'PM',
+    settingsTitle: 'Impostazioni della clinica', myBookingLink: '🔍 Modifica o annulla la tua prenotazione', mapsLink: '📍 Posizione della clinica',
+    loading: 'Caricamento dati...', suspendedTitle: 'Prenotazioni sospese temporaneamente', suspendedBody: 'Contatta la clinica per maggiori dettagli',
+    vacationTitle: 'La clinica è in ferie', vacationBody: 'Torneremo presto ad accettare prenotazioni',
+    stepChooseDoctor: 'Scegli un dottore', stepChooseService: 'Scegli un servizio', stepChooseDay: 'Scegli una data', stepChooseTime: "Scegli un orario",
+    stepYourName: 'Il tuo nome', stepYourPhone: 'Numero di cellulare', stepReview: 'Rivedi i tuoi dati e conferma', namePlaceholder: 'Scrivi il tuo nome',
+    labelDoctor: 'Dottore', labelName: 'Nome', labelService: 'Servizio', labelDay: 'Data', labelTime: 'Ora', labelPhone: 'Cellulare',
+    btnBack: 'Indietro', btnNext: 'Avanti', btnConfirmBooking: 'Conferma prenotazione', btnBooking: 'Prenotazione...',
+    successTitle: 'Prenotazione confermata', refCodePrefix: 'Prenotazione n. ',
+    footerHint: 'Ti aspetteremo all\'orario stabilito. Per modificare o annullare, tocca in alto "Modifica o annulla la tua prenotazione" in qualsiasi momento.',
+    sendClinicConfirm: '📱 Invia conferma alla clinica su WhatsApp', sendDoctorConfirmPrefix: '📱 Invia conferma a ', sendDoctorConfirmSuffix: ' su WhatsApp',
+    saveImage: '📷 Salva i dettagli come immagine', savingImage: 'Preparazione...', addToCalendar: '📅 Aggiungi al calendario del telefono',
+    footerNote: 'Offerto dal sistema di prenotazione HAGZA',
+    errFillName: 'Per favore scrivi il tuo nome', errPhoneFormat: 'Inserisci un numero di cellulare valido (01xxxxxxxxx)', errGeneric: 'Si è verificato un errore, riprova', errConnection: 'Errore di connessione, riprova',
+    pastSuffix: ' (passato)', fullSuffix: ' (completo)',
+    mbTitle: 'La tua prenotazione', mbPhoneLabel: 'Il numero con cui hai prenotato', mbCancelBtn: 'Annulla', mbSearchBtn: 'Cerca la mia prenotazione', mbSearching: 'Ricerca...',
+    mbBackToSearch: 'Cerca un altro numero', mbCloseList: 'Chiudi', mbEmpty: 'Nessuna prenotazione futura trovata con questo numero',
+    mbEdit: '✏️ Modifica appuntamento', mbCancelAction: '❌ Annulla', mbSaveEdit: 'Salva modifiche', mbSaving: 'Salvataggio...', mbChooseFirst: 'Scegli prima un giorno e un orario',
+    mbConfirmCancelText: 'Sei sicuro di voler annullare questa prenotazione?', mbAbortCancel: 'Torna indietro', mbConfirmCancelBtn: 'Sì, annulla', mbCanceling: 'Annullamento...',
+    mbEditedAlert: 'La tua prenotazione è stata aggiornata con successo ✅',
+  },
+};
+// رسائل السيرفر ثابتة بالعربي دايماً (السيرفر مش عارف اللغة المختارة) - القاموس ده بيترجم الرسائل المعروفة بس للعرض،
+// ولو رسالة جديدة مش موجودة في القاموس بترجع زي ما هي بالعربي (أفضل من غلطة ترجمة)
+const SERVER_MSG_MAP = {
+  en: {
+    'من فضلك اكتب اسمك': 'Please enter your name',
+    'رقم الموبايل غير صحيح': 'Please enter a valid mobile number',
+    'الخدمة المختارة غير متاحة': 'The selected service is not available',
+    'الدكتور المختار غير متاح': 'The selected doctor is not available',
+    'اليوم المختار غير متاح': 'The selected day is not available',
+    'الوقت المختار غير متاح': 'The selected time is not available',
+    'المعاد ده فات وقته، من فضلك اختار معاد لسه جاي': 'This time has already passed, please choose an upcoming one',
+    'الموعد ده مكتمل، من فضلك اختار موعد تاني': 'This slot is fully booked, please choose another one',
+    'اليوم ده اتقفل من العيادة، من فضلك اختار يوم تاني': 'This day is closed by the clinic, please choose another day',
+    'الحجز متوقف مؤقتاً، من فضلك تواصل مع العيادة': 'Booking is temporarily paused, please contact the clinic',
+    'العيادة في إجازة حالياً، من فضلك حاول لاحقاً': 'The clinic is currently on vacation, please try again later',
+    'العيادة غير موجودة': 'Clinic not found',
+    'السيرفر مشغول، حاول تاني بعد لحظة': 'Server is busy, please try again shortly',
+    'الحجز مش موجود، يمكن اتلغى بالفعل': 'Booking not found, it may already be cancelled',
+    'رقم الموبايل غير مطابق لهذا الحجز': 'This mobile number does not match this booking',
+    'عندك حجز بالفعل في نفس اليوم على نفس الرقم، تقدر تعدله من "لتعديل أو إلغاء حجزك"': 'You already have a booking on this day with this number — you can edit it from "Edit or cancel your booking"',
+    'حصل خطأ، حاول تاني': 'Something went wrong, please try again',
+    'حصل خطأ في الاتصال، حاول تاني': 'Connection error, please try again',
+  },
+  fr: {
+    'من فضلك اكتب اسمك': 'Veuillez entrer votre nom',
+    'رقم الموبايل غير صحيح': 'Veuillez entrer un numéro de mobile valide',
+    'الخدمة المختارة غير متاحة': "Le service sélectionné n'est pas disponible",
+    'الدكتور المختار غير متاح': "Le médecin sélectionné n'est pas disponible",
+    'اليوم المختار غير متاح': "Le jour sélectionné n'est pas disponible",
+    'الوقت المختار غير متاح': "L'heure sélectionnée n'est pas disponible",
+    'المعاد ده فات وقته، من فضلك اختار معاد لسه جاي': 'Ce créneau est déjà passé, veuillez en choisir un à venir',
+    'الموعد ده مكتمل، من فضلك اختار موعد تاني': 'Ce créneau est complet, veuillez en choisir un autre',
+    'اليوم ده اتقفل من العيادة، من فضلك اختار يوم تاني': 'Ce jour est fermé par la clinique, veuillez choisir un autre jour',
+    'الحجز متوقف مؤقتاً، من فضلك تواصل مع العيادة': 'Les réservations sont suspendues, veuillez contacter la clinique',
+    'العيادة في إجازة حالياً، من فضلك حاول لاحقاً': 'La clinique est actuellement en congé, réessayez plus tard',
+    'العيادة غير موجودة': 'Clinique introuvable',
+    'السيرفر مشغول، حاول تاني بعد لحظة': 'Serveur occupé, réessayez dans un instant',
+    'الحجز مش موجود، يمكن اتلغى بالفعل': 'Réservation introuvable, elle a peut-être déjà été annulée',
+    'رقم الموبايل غير مطابق لهذا الحجز': 'Ce numéro de mobile ne correspond pas à cette réservation',
+    'عندك حجز بالفعل في نفس اليوم على نفس الرقم، تقدر تعدله من "لتعديل أو إلغاء حجزك"': 'Vous avez déjà une réservation ce jour avec ce numéro — vous pouvez la modifier depuis "Modifier ou annuler votre rendez-vous"',
+    'حصل خطأ، حاول تاني': "Une erreur s'est produite, réessayez",
+    'حصل خطأ في الاتصال، حاول تاني': 'Erreur de connexion, réessayez',
+  },
+  es: {
+    'من فضلك اكتب اسمك': 'Por favor escribe tu nombre',
+    'رقم الموبايل غير صحيح': 'Introduce un número de móvil válido',
+    'الخدمة المختارة غير متاحة': 'El servicio seleccionado no está disponible',
+    'الدكتور المختار غير متاح': 'El doctor seleccionado no está disponible',
+    'اليوم المختار غير متاح': 'El día seleccionado no está disponible',
+    'الوقت المختار غير متاح': 'La hora seleccionada no está disponible',
+    'المعاد ده فات وقته، من فضلك اختار معاد لسه جاي': 'Ese horario ya pasó, elige uno próximo',
+    'الموعد ده مكتمل، من فضلك اختار موعد تاني': 'Ese horario está completo, elige otro',
+    'اليوم ده اتقفل من العيادة، من فضلك اختار يوم تاني': 'Ese día está cerrado por la clínica, elige otro día',
+    'الحجز متوقف مؤقتاً، من فضلك تواصل مع العيادة': 'Las reservas están pausadas, contacta a la clínica',
+    'العيادة في إجازة حالياً، من فضلك حاول لاحقاً': 'La clínica está de vacaciones, inténtalo más tarde',
+    'العيادة غير موجودة': 'Clínica no encontrada',
+    'السيرفر مشغول، حاول تاني بعد لحظة': 'Servidor ocupado, inténtalo en un momento',
+    'الحجز مش موجود، يمكن اتلغى بالفعل': 'Reserva no encontrada, puede que ya se haya cancelado',
+    'رقم الموبايل غير مطابق لهذا الحجز': 'Este número de móvil no coincide con esta reserva',
+    'عندك حجز بالفعل في نفس اليوم على نفس الرقم، تقدر تعدله من "لتعديل أو إلغاء حجزك"': 'Ya tienes una reserva ese día con este número — puedes editarla desde "Editar o cancelar tu cita"',
+    'حصل خطأ، حاول تاني': 'Ocurrió un error, inténtalo de nuevo',
+    'حصل خطأ في الاتصال، حاول تاني': 'Error de conexión, inténtalo de nuevo',
+  },
+  it: {
+    'من فضلك اكتب اسمك': 'Per favore scrivi il tuo nome',
+    'رقم الموبايل غير صحيح': 'Inserisci un numero di cellulare valido',
+    'الخدمة المختارة غير متاحة': 'Il servizio selezionato non è disponibile',
+    'الدكتور المختار غير متاح': 'Il dottore selezionato non è disponibile',
+    'اليوم المختار غير متاح': 'Il giorno selezionato non è disponibile',
+    'الوقت المختار غير متاح': "L'orario selezionato non è disponibile",
+    'المعاد ده فات وقته، من فضلك اختار معاد لسه جاي': 'Questo orario è già passato, scegline uno futuro',
+    'الموعد ده مكتمل، من فضلك اختار موعد تاني': 'Questo orario è al completo, scegline un altro',
+    'اليوم ده اتقفل من العيادة، من فضلك اختار يوم تاني': 'Questo giorno è chiuso dalla clinica, scegli un altro giorno',
+    'الحجز متوقف مؤقتاً، من فضلك تواصل مع العيادة': 'Le prenotazioni sono sospese, contatta la clinica',
+    'العيادة في إجازة حالياً، من فضلك حاول لاحقاً': 'La clinica è attualmente in ferie, riprova più tardi',
+    'العيادة غير موجودة': 'Clinica non trovata',
+    'السيرفر مشغول، حاول تاني بعد لحظة': 'Server occupato, riprova tra poco',
+    'الحجز مش موجود، يمكن اتلغى بالفعل': 'Prenotazione non trovata, potrebbe essere già stata annullata',
+    'رقم الموبايل غير مطابق لهذا الحجز': 'Questo numero di cellulare non corrisponde a questa prenotazione',
+    'عندك حجز بالفعل في نفس اليوم على نفس الرقم، تقدر تعدله من "لتعديل أو إلغاء حجزك"': 'Hai già una prenotazione in questo giorno con questo numero — puoi modificarla da "Modifica o annulla la tua prenotazione"',
+    'حصل خطأ، حاول تاني': 'Si è verificato un errore, riprova',
+    'حصل خطأ في الاتصال، حاول تاني': 'Errore di connessione, riprova',
+  },
+};
+
+let currentLang = 'ar';
+try { currentLang = localStorage.getItem('hagza_lang') || 'ar'; } catch (e) {}
+if (!I18N[currentLang]) currentLang = 'ar';
+
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key] !== undefined) ? I18N[currentLang][key] : I18N.ar[key]; }
+function translateServerMsg(msg) {
+  if (currentLang === 'ar' || !msg) return msg;
+  const map = SERVER_MSG_MAP[currentLang];
+  return (map && map[msg]) || msg;
+}
+function applyI18nStatic() {
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    const val = t(key);
+    if (val !== undefined) el.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = t(key);
+    if (val !== undefined) el.setAttribute('placeholder', val);
+  });
+  document.getElementById('open-settings').title = t('settingsTitle');
+}
+// بيحدّث تسميات أيام/أوقات الشيبس الموجودة بالفعل من غير ما يفقد الاختيار الحالي (عشان لو المريض غيّر اللغة في نص الحجز)
+function relabelExistingChips() {
+  document.querySelectorAll('.day-chip[data-iso]').forEach((btn) => {
+    const d = new Date(btn.getAttribute('data-iso'));
+    btn.textContent = formatDateLabelLocalized(d, currentLang);
+  });
+  document.querySelectorAll('.time-chip[data-time]').forEach((btn) => {
+    const time = btn.getAttribute('data-time');
+    let label = formatTimeLocalized(time, currentLang);
+    if (btn.disabled) {
+      if (btn.dataset.state === 'past') label += t('pastSuffix');
+      else if (btn.dataset.state === 'full') label += t('fullSuffix');
+    }
+    btn.textContent = label;
+  });
+  document.querySelectorAll('#mb-day-chips .chip[data-iso]').forEach((btn) => {
+    const d = new Date(btn.getAttribute('data-iso'));
+    btn.textContent = formatDateLabelLocalized(d, currentLang);
+  });
+  document.querySelectorAll('#mb-time-chips .chip[data-time]').forEach((btn) => {
+    const time = btn.getAttribute('data-time');
+    let label = formatTimeLocalized(time, currentLang);
+    if (btn.disabled) {
+      if (btn.dataset.state === 'past') label += t('pastSuffix');
+      else if (btn.dataset.state === 'full') label += t('fullSuffix');
+    }
+    btn.textContent = label;
+  });
+}
+// بيحدّث النصوص المتغيّرة (زرار التالي/تأكيد، ملخص الحجز لو ظاهر) بعد تغيير اللغة
+function refreshDynamicTexts() {
+  updateNav();
+  if (currentStep === 5) {
+    document.getElementById('sum-day').textContent = selectedDay ? formatDateLabelLocalized(selectedDateObj, currentLang) : '—';
+    document.getElementById('sum-time').textContent = selectedTime ? formatTimeLocalized(selectedTime, currentLang) : '—';
+  }
+  if (currentStep === 'success' && selectedDateObj && selectedTime) {
+    document.getElementById('fin-day').textContent = formatDateLabelLocalized(selectedDateObj, currentLang);
+    document.getElementById('fin-time').textContent = formatTimeLocalized(selectedTime, currentLang);
+    document.getElementById('ref-code').textContent = t('refCodePrefix') + document.getElementById('ref-code').textContent.replace(/^\D+/, '');
+  }
+}
+function formatDateLabelLocalized(date, lang) {
+  const d = I18N[lang] || I18N.ar;
+  return `${d.dayNames[date.getDay()]} ${date.getDate()} ${d.monthNames[date.getMonth()]}`;
+}
+function formatTimeLocalized(timeStr, lang) {
+  if (lang === 'ar') return timeStr;
+  const d = I18N[lang] || I18N.ar;
+  const { h } = parseTimeToHM(timeStr);
+  let displayH = h % 12; if (displayH === 0) displayH = 12;
+  const period = h < 12 ? d.am : d.pm;
+  return displayH + ':00 ' + period;
+}
+function setLanguage(lang) {
+  if (!I18N[lang]) lang = 'ar';
+  currentLang = lang;
+  try { localStorage.setItem('hagza_lang', lang); } catch (e) {}
+  document.documentElement.lang = lang;
+  document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+  document.getElementById('lang-select').value = lang;
+  applyI18nStatic();
+  relabelExistingChips();
+  refreshDynamicTexts();
 }
 
 function timeSlots(startHour, endHour) {
@@ -659,7 +995,10 @@ async function loadData() {
 
     renderBookingUI();
   } catch (err) {
-    document.getElementById('loading').textContent = 'مفيش اتصال بالبيانات — تأكد إن رابط Apps Script متظبط.';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('loading').textContent = currentLang === 'ar'
+      ? 'مفيش اتصال بالبيانات — تأكد إن رابط Apps Script متظبط.'
+      : t('errConnection');
   }
 }
 
@@ -732,7 +1071,8 @@ function renderBookingUI() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'chip day-chip';
-    btn.textContent = formatDateLabel(dateObj);
+    btn.setAttribute('data-iso', dateObj.toISOString());
+    btn.textContent = formatDateLabelLocalized(dateObj, currentLang);
     btn.addEventListener('click', () => {
       document.querySelectorAll('.day-chip').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
@@ -747,6 +1087,7 @@ function renderBookingUI() {
 
   renderTimeSlots();
   goToStep(1, true);
+  applyI18nStatic();
 }
 
 function renderTimeSlots() {
@@ -775,8 +1116,12 @@ function renderTimeSlots() {
     const bookedCount = appData.bookings.filter(b => b.day === selectedDay && b.time === time && (b.doctor || '') === (selectedDoctor || '')).length;
     const isFull = selectedDay && bookedCount >= maxPerSlot;
 
-    btn.textContent = isPast ? time + ' (فات)' : (isFull ? time + ' (مكتمل)' : time);
+    btn.setAttribute('data-time', time);
     btn.disabled = isPast || isFull;
+    btn.dataset.state = isPast ? 'past' : (isFull ? 'full' : '');
+    let label = formatTimeLocalized(time, currentLang);
+    if (isPast) label += t('pastSuffix'); else if (isFull) label += t('fullSuffix');
+    btn.textContent = label;
 
     btn.addEventListener('click', () => {
       document.querySelectorAll('.time-chip').forEach(b => b.classList.remove('selected'));
@@ -814,9 +1159,9 @@ function updateNav() {
   btnBack.disabled = currentStep === 1;
 
   if (currentStep === 5) {
-    btnNext.textContent = 'تأكيد الحجز';
+    btnNext.textContent = t('btnConfirmBooking');
   } else {
-    btnNext.textContent = 'التالي';
+    btnNext.textContent = t('btnNext');
   }
   btnNext.disabled = currentStep <= 4 && !stepIsValid(currentStep);
 }
@@ -833,8 +1178,8 @@ function goToStep(n, skipAnim) {
     document.getElementById('sum-doctor-row').style.display = doctorsEnabled ? 'flex' : 'none';
     document.getElementById('sum-doctor').textContent = selectedDoctor || '—';
     document.getElementById('sum-service').textContent = selectedService || '—';
-    document.getElementById('sum-day').textContent = selectedDay || '—';
-    document.getElementById('sum-time').textContent = selectedTime || '—';
+    document.getElementById('sum-day').textContent = selectedDay ? formatDateLabelLocalized(selectedDateObj, currentLang) : '—';
+    document.getElementById('sum-time').textContent = selectedTime ? formatTimeLocalized(selectedTime, currentLang) : '—';
     document.getElementById('sum-phone').textContent = document.getElementById('phone').value.trim();
     document.getElementById('sum-name').textContent = document.getElementById('patient-name').value.trim() || '—';
   }
@@ -847,7 +1192,7 @@ function goToStep(n, skipAnim) {
 document.getElementById('save-image-btn').addEventListener('click', async () => {
   const btn = document.getElementById('save-image-btn');
   const originalText = btn.textContent;
-  btn.textContent = 'جاري التجهيز...';
+  btn.textContent = t('savingImage');
   btn.disabled = true;
   try {
     const canvas = await html2canvas(document.getElementById('card'), {
@@ -883,7 +1228,7 @@ document.getElementById('save-image-btn').addEventListener('click', async () => 
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   } catch (err) {
-    alert('تعذّر حفظ الصورة، جرب تاخد لقطة شاشة عادية بدلاً منها.');
+    alert(currentLang === 'ar' ? 'تعذّر حفظ الصورة، جرب تاخد لقطة شاشة عادية بدلاً منها.' : t('errGeneric'));
   }
   btn.textContent = originalText;
   btn.disabled = false;
@@ -893,7 +1238,9 @@ document.getElementById('btn-back').addEventListener('click', () => {
   if (currentStep > 1) goToStep(currentStep - 1);
 });
 
-document.getElementById('phone').addEventListener('input', () => {
+document.getElementById('phone').addEventListener('input', (e) => {
+  const normalized = normalizeDigits(e.target.value);
+  if (normalized !== e.target.value) e.target.value = normalized;
   document.getElementById('error-msg').style.display = 'none';
   updateNav();
 });
@@ -913,8 +1260,8 @@ document.getElementById('btn-next').addEventListener('click', async () => {
     const errorMsg = document.getElementById('error-msg');
     if (!stepIsValid(4)) {
       errorMsg.textContent = document.getElementById('patient-name').value.trim().length < 2
-        ? 'من فضلك اكتب اسمك'
-        : 'اكتب رقم موبايل صحيح (01xxxxxxxxx)';
+        ? t('errFillName')
+        : t('errPhoneFormat');
       errorMsg.style.display = 'block';
       return;
     }
@@ -935,7 +1282,7 @@ async function performBooking() {
 
   btnNext.disabled = true;
   btnBack.disabled = true;
-  btnNext.textContent = 'جاري الحجز...';
+  btnNext.textContent = t('btnBooking');
 
   try {
     const res = await fetch(API_URL, {
@@ -947,26 +1294,26 @@ async function performBooking() {
     const result = JSON.parse(rawText);
 
     if (!result.success) {
-      confirmError.textContent = result.message || 'حصل خطأ، حاول تاني';
+      confirmError.textContent = translateServerMsg(result.message) || t('errGeneric');
       confirmError.style.display = 'block';
       btnNext.disabled = false;
       btnBack.disabled = false;
-      btnNext.textContent = 'تأكيد الحجز';
+      btnNext.textContent = t('btnConfirmBooking');
       return;
     }
 
     appData.bookings.push({ day: selectedDay, time: selectedTime, service: selectedService, phone, doctor: selectedDoctor || '' });
 
-    document.getElementById('fin-doctor-row').style.display = doctorsEnabled ? 'flex' : 'none';
+    document.getElementById('fin-doctor-row').style.display = (doctorsEnabled && selectedDoctor) ? 'flex' : 'none';
     document.getElementById('fin-doctor').textContent = selectedDoctor || '—';
     document.getElementById('fin-name').textContent = patientName || '—';
     document.getElementById('fin-service').textContent = selectedService;
-    document.getElementById('fin-day').textContent = selectedDay;
-    document.getElementById('fin-time').textContent = selectedTime;
+    document.getElementById('fin-day').textContent = formatDateLabelLocalized(selectedDateObj, currentLang);
+    document.getElementById('fin-time').textContent = formatTimeLocalized(selectedTime, currentLang);
     document.getElementById('fin-phone').textContent = phone;
-    document.getElementById('ref-code').textContent = 'رقم الحجز #' + Date.now().toString().slice(-6);
+    document.getElementById('ref-code').textContent = t('refCodePrefix') + Date.now().toString().slice(-6);
 
-    const doctorLine = doctorsEnabled ? `\nالدكتور: ${selectedDoctor}` : '';
+    const doctorLine = (doctorsEnabled && selectedDoctor) ? `\nالدكتور: ${selectedDoctor}` : '';
     const waMsgText = `مرحباً، عايز/ة أأكد حجزي:\nالاسم: ${patientName}${doctorLine}\nالخدمة: ${selectedService}\nالتاريخ: ${selectedDay}\nالوقت: ${selectedTime}\nرقم الموبايل: ${phone}`;
 
     const clinicWhatsapp = toWhatsappNumber(appData.settings.clinicWhatsapp);
@@ -982,28 +1329,32 @@ async function performBooking() {
     const doctorWhatsapp = toWhatsappNumber(selectedDoctorWhatsapp);
     const doctorWaLink = document.getElementById('whatsapp-doctor-link');
     if (doctorsEnabled && doctorWhatsapp && doctorWhatsapp !== clinicWhatsapp) {
-      doctorWaLink.textContent = `📱 أرسلي تأكيد الحجز لـ ${selectedDoctor} على واتساب`;
+      doctorWaLink.textContent = t('sendDoctorConfirmPrefix') + selectedDoctor + t('sendDoctorConfirmSuffix');
       doctorWaLink.href = `https://wa.me/${doctorWhatsapp}?text=${encodeURIComponent('مرحباً ' + selectedDoctor + '، ' + waMsgText)}`;
       doctorWaLink.style.display = 'flex';
     } else {
       doctorWaLink.style.display = 'none';
     }
 
-    const calendarTitle = doctorsEnabled ? `${selectedService} - ${selectedDoctor}` : selectedService;
+    const calendarTitle = (doctorsEnabled && selectedDoctor) ? `${selectedService} - ${selectedDoctor}` : selectedService;
     const calendarLink = document.getElementById('calendar-link');
-    calendarLink.href = buildCalendarLink(
+    if (calendarLink._blobUrl) { URL.revokeObjectURL(calendarLink._blobUrl); calendarLink._blobUrl = null; }
+    const icsUrl = buildCalendarLink(
       appData.settings.clinicName || 'العيادة', calendarTitle, selectedDateObj, selectedTime, appData.settings.mapsLink
     );
+    calendarLink._blobUrl = icsUrl;
+    calendarLink.href = icsUrl;
+    calendarLink.setAttribute('download', 'حجز-الموعد.ics');
     calendarLink.style.display = 'flex';
 
     document.getElementById('nav-row').style.display = 'none';
     goToStep('success');
   } catch (err) {
-    confirmError.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    confirmError.textContent = t('errConnection');
     confirmError.style.display = 'block';
     btnNext.disabled = false;
     btnBack.disabled = false;
-    btnNext.textContent = 'تأكيد الحجز';
+    btnNext.textContent = t('btnConfirmBooking');
   }
 }
 
@@ -1234,14 +1585,14 @@ async function mbSearch() {
   const phone = document.getElementById('mb-phone').value.trim();
   const err = document.getElementById('mb-search-error');
   if (!/^01[0-9]{9}$/.test(phone)) {
-    err.textContent = 'اكتب رقم موبايل صحيح (01xxxxxxxxx)';
+    err.textContent = t('errPhoneFormat');
     err.style.display = 'block';
     return;
   }
   err.style.display = 'none';
   const btn = document.getElementById('mb-submit-search');
   btn.disabled = true;
-  btn.textContent = 'جاري البحث...';
+  btn.textContent = t('mbSearching');
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -1250,9 +1601,9 @@ async function mbSearch() {
     });
     const result = await res.json();
     btn.disabled = false;
-    btn.textContent = 'دور على حجزي';
+    btn.textContent = t('mbSearchBtn');
     if (!result.success) {
-      err.textContent = result.message || 'حصل خطأ، حاول تاني';
+      err.textContent = translateServerMsg(result.message) || t('errGeneric');
       err.style.display = 'block';
       return;
     }
@@ -1261,18 +1612,27 @@ async function mbSearch() {
     mbShowStep('mb-list-step');
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = 'دور على حجزي';
-    err.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    btn.textContent = t('mbSearchBtn');
+    err.textContent = t('errConnection');
     err.style.display = 'block';
   }
 }
 document.getElementById('mb-submit-search').addEventListener('click', mbSearch);
 document.getElementById('mb-phone').addEventListener('keydown', (e) => { if (e.key === 'Enter') mbSearch(); });
+document.getElementById('mb-phone').addEventListener('input', (e) => {
+  const normalized = normalizeDigits(e.target.value);
+  if (normalized !== e.target.value) e.target.value = normalized;
+  document.getElementById('mb-search-error').style.display = 'none';
+});
 
 function renderMbList(bookings) {
   const list = document.getElementById('mb-list');
   if (!bookings.length) {
-    list.innerHTML = '<p class="mb-empty">مفيش حجوزات جاية لقيتها بالرقم ده</p>';
+    list.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'mb-empty';
+    p.textContent = t('mbEmpty');
+    list.appendChild(p);
     return;
   }
   list.innerHTML = '';
@@ -1280,13 +1640,13 @@ function renderMbList(bookings) {
     const card = document.createElement('div');
     card.className = 'mybooking-card';
     card.innerHTML = `
-      ${b.doctor ? `<div class="mb-row"><span>الدكتور</span><b>${b.doctor}</b></div>` : ''}
-      <div class="mb-row"><span>الخدمة</span><b>${b.service}</b></div>
-      <div class="mb-row"><span>التاريخ</span><b>${b.day}</b></div>
-      <div class="mb-row"><span>الوقت</span><b>${b.time}</b></div>
+      ${b.doctor ? `<div class="mb-row"><span>${t('labelDoctor')}</span><b>${b.doctor}</b></div>` : ''}
+      <div class="mb-row"><span>${t('labelService')}</span><b>${b.service}</b></div>
+      <div class="mb-row"><span>${t('labelDay')}</span><b>${displayDay(b.day)}</b></div>
+      <div class="mb-row"><span>${t('labelTime')}</span><b>${displayTime(b.time)}</b></div>
       <div class="mybooking-actions">
-        <button type="button" class="mb-btn primary" data-act="edit">✏️ تعديل الموعد</button>
-        <button type="button" class="mb-btn danger" data-act="cancel">❌ إلغاء</button>
+        <button type="button" class="mb-btn primary" data-act="edit">${t('mbEdit')}</button>
+        <button type="button" class="mb-btn danger" data-act="cancel">${t('mbCancelAction')}</button>
       </div>`;
     card.querySelector('[data-act="edit"]').addEventListener('click', () => startMbEdit(b));
     card.querySelector('[data-act="cancel"]').addEventListener('click', () => startMbCancel(b));
@@ -1310,7 +1670,8 @@ function startMbEdit(booking) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'chip';
-    btn.textContent = formatDateLabel(dateObj);
+    btn.setAttribute('data-iso', dateObj.toISOString());
+    btn.textContent = formatDateLabelLocalized(dateObj, currentLang);
     btn.addEventListener('click', () => {
       dayChips.querySelectorAll('.chip').forEach((b) => b.classList.remove('selected'));
       btn.classList.add('selected');
@@ -1351,8 +1712,12 @@ function renderMbTimeSlots() {
     const bookedCount = appData.bookings.filter((bk) => bk.day === mbEditDay && bk.time === time && (bk.doctor || '') === (mbCurrentBooking.doctor || '')).length;
     const effectiveCount = isCurrentSlot ? Math.max(0, bookedCount - 1) : bookedCount;
     const isFull = mbEditDay && effectiveCount >= maxPerSlot;
-    btn.textContent = isPast ? time + ' (فات)' : (isFull ? time + ' (مكتمل)' : time);
+    btn.setAttribute('data-time', time);
     btn.disabled = isPast || isFull;
+    btn.dataset.state = isPast ? 'past' : (isFull ? 'full' : '');
+    let label = formatTimeLocalized(time, currentLang);
+    if (isPast) label += t('pastSuffix'); else if (isFull) label += t('fullSuffix');
+    btn.textContent = label;
     btn.addEventListener('click', () => {
       timeChips.querySelectorAll('.chip').forEach((b) => b.classList.remove('selected'));
       btn.classList.add('selected');
@@ -1367,14 +1732,14 @@ document.getElementById('mb-cancel-edit').addEventListener('click', () => mbShow
 document.getElementById('mb-save-edit').addEventListener('click', async () => {
   const err = document.getElementById('mb-edit-error');
   if (!mbEditDay || !mbEditTime) {
-    err.textContent = 'اختار يوم ووقت الأول';
+    err.textContent = t('mbChooseFirst');
     err.style.display = 'block';
     return;
   }
   err.style.display = 'none';
   const btn = document.getElementById('mb-save-edit');
   btn.disabled = true;
-  btn.textContent = 'جاري الحفظ...';
+  btn.textContent = t('mbSaving');
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -1386,19 +1751,19 @@ document.getElementById('mb-save-edit').addEventListener('click', async () => {
     });
     const result = await res.json();
     btn.disabled = false;
-    btn.textContent = 'احفظ التعديل';
+    btn.textContent = t('mbSaveEdit');
     if (!result.success) {
-      err.textContent = result.message || 'حصل خطأ، حاول تاني';
+      err.textContent = translateServerMsg(result.message) || t('errGeneric');
       err.style.display = 'block';
       return;
     }
     await refreshBookingsOnly();
     mybookingModal.classList.remove('open');
-    alert('تم تعديل حجزك بنجاح ✅\n' + mbEditDay + ' - ' + mbEditTime);
+    alert(t('mbEditedAlert') + '\n' + formatDateLabelLocalized(mbEditDateObj, currentLang) + ' - ' + formatTimeLocalized(mbEditTime, currentLang));
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = 'احفظ التعديل';
-    err.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    btn.textContent = t('mbSaveEdit');
+    err.textContent = t('errConnection');
     err.style.display = 'block';
   }
 });
@@ -1414,7 +1779,7 @@ document.getElementById('mb-confirm-cancel').addEventListener('click', async () 
   const err = document.getElementById('mb-cancel-error');
   const btn = document.getElementById('mb-confirm-cancel');
   btn.disabled = true;
-  btn.textContent = 'جاري الإلغاء...';
+  btn.textContent = t('mbCanceling');
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -1423,9 +1788,9 @@ document.getElementById('mb-confirm-cancel').addEventListener('click', async () 
     });
     const result = await res.json();
     btn.disabled = false;
-    btn.textContent = 'اه، ألغي الحجز';
+    btn.textContent = t('mbConfirmCancelBtn');
     if (!result.success) {
-      err.textContent = result.message || 'حصل خطأ، حاول تاني';
+      err.textContent = translateServerMsg(result.message) || t('errGeneric');
       err.style.display = 'block';
       return;
     }
@@ -1440,11 +1805,18 @@ document.getElementById('mb-confirm-cancel').addEventListener('click', async () 
     mbShowStep('mb-list-step');
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = 'اه، ألغي الحجز';
-    err.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    btn.textContent = t('mbConfirmCancelBtn');
+    err.textContent = t('errConnection');
     err.style.display = 'block';
   }
 });
+
+document.getElementById('lang-select').addEventListener('change', (e) => setLanguage(e.target.value));
+
+document.documentElement.lang = currentLang;
+document.documentElement.dir = (currentLang === 'ar') ? 'rtl' : 'ltr';
+document.getElementById('lang-select').value = currentLang;
+applyI18nStatic();
 
 loadData();
 </script>
