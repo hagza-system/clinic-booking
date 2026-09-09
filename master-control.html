@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حجزة HAGZA | لوحة التحكم الرئيسية</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: #111827;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #1f2937;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 460px;
+    width: 100%;
+    color: #f3f4f6;
+    margin-top: 20px;
+  }
+  h1 { font-size: 17px; margin-bottom: 6px; }
+  h2 { font-size: 14.5px; margin: 22px 0 14px; color: #d1d5db; }
+  .subtitle { font-size: 13px; color: #9ca3af; margin-bottom: 24px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: #9ca3af; margin-bottom: 8px; }
+  input, textarea {
+    width: 100%; border-radius: 10px; border: 1px solid #374151;
+    padding: 0 14px; font-size: 15px; font-family: inherit; background: #111827; color: #f3f4f6;
+  }
+  input { height: 44px; }
+  textarea { padding: 10px 14px; min-height: 60px; resize: vertical; }
+  input:focus, textarea:focus { outline: none; border-color: #6366f1; }
+  .btn {
+    width: 100%; height: 46px; border-radius: 10px; border: none; font-size: 14.5px;
+    font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 6px;
+  }
+  .btn-primary { background: #6366f1; color: #fff; }
+  .btn-primary:hover { background: #4f46e5; }
+  .btn-secondary { background: #374151; color: #f3f4f6; }
+  .error-msg { font-size: 13px; color: #f87171; margin-top: 8px; display: none; text-align: center; }
+  .ok-msg { font-size: 13px; color: #4ade80; margin-top: 8px; display: none; text-align: center; }
+  .clinic-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: #111827; border: 1px solid #374151; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+  }
+  .clinic-name { font-size: 14.5px; font-weight: 600; }
+  .clinic-id { font-size: 12px; color: #9ca3af; direction: ltr; text-align: right; }
+  .status-pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .status-pill.active { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .status-pill.inactive { background: rgba(239,68,68,0.15); color: #f87171; }
+  .toggle-btn { height: 34px; padding: 0 14px; border-radius: 8px; border: none; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .toggle-on { background: #16a34a; color: #fff; }
+  .toggle-off { background: #dc2626; color: #fff; }
+  .empty-hint { font-size: 13px; color: #9ca3af; text-align: center; padding: 16px 0; }
+  .add-clinic-box { border-top: 1px solid #374151; margin-top: 22px; padding-top: 18px; }
+  .hint { font-size: 11.5px; color: #6b7280; margin-top: 6px; }
+  .clinic-link { font-size: 11.5px; color: #93c5fd; word-break: break-all; margin-top: 4px; display: block; }
+  .clinic-row { flex-wrap: wrap; }
+  .clinic-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .icon-btn { height: 34px; padding: 0 12px; border-radius: 8px; border: none; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .edit-btn { background: #374151; color: #f3f4f6; }
+  .delete-btn { background: #7f1d1d; color: #fecaca; }
+  .edit-box, .delete-box, .security-box, .reset-box {
+    width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #374151; display: none;
+  }
+  .edit-box.open, .delete-box.open, .security-box.open, .reset-box.open { display: block; }
+  .security-info { font-size: 12px; color: #9ca3af; margin-top: 4px; line-height: 1.7; }
+  .security-info b { color: #d1d5db; }
+  .reset-pin-result { font-size: 13px; color: #4ade80; margin-top: 8px; display: none; text-align: center; background: rgba(34,197,94,0.1); border-radius: 8px; padding: 8px; }
+  .delete-box p { font-size: 12.5px; color: #fca5a5; margin-bottom: 8px; }
+  .inline-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .inline-actions button { flex: 1; height: 40px; }
+  .link-row { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 10px; }
+  .link-pair { display: flex; gap: 6px; }
+  .link-btn {
+    flex: 1; height: 34px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .link-btn.booking { background: #1e3a5f; color: #93c5fd; }
+  .link-btn.dashboard { background: #1e3a2f; color: #86efac; }
+  .copy-btn {
+    width: 40px; height: 34px; border-radius: 8px; border: none; background: #374151; color: #d1d5db;
+    font-size: 13px; cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  .copy-btn.copied { background: #16a34a; color: #fff; }
+  .payment-box { width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #374151; }
+  .payment-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .payment-pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+  .payment-pill.paid { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .payment-pill.soon { background: rgba(234,179,8,0.15); color: #fde047; }
+  .payment-pill.overdue { background: rgba(239,68,68,0.15); color: #f87171; }
+  .payment-pill.none { background: rgba(107,114,128,0.2); color: #9ca3af; }
+  .mark-paid-btn { height: 34px; padding: 0 14px; border-radius: 8px; border: none; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; background: #16a34a; color: #fff; }
+  .due-date-toggle { background: none; border: none; color: #93c5fd; font-size: 12px; cursor: pointer; font-family: inherit; margin-top: 8px; text-decoration: underline; padding: 0; }
+  .due-date-edit { display: none; margin-top: 8px; gap: 8px; }
+  .due-date-edit.open { display: flex; }
+  .due-date-edit input { flex: 1; height: 38px; }
+  .due-date-edit button { height: 38px; padding: 0 12px; border-radius: 8px; border: none; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; background: #6366f1; color: #fff; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>⚙️ حجزة HAGZA — لوحة التحكم الرئيسية</h1>
+  <p class="subtitle">التحكم في كل عيادات عملاءك من مكان واحد</p>
+
+  <div id="login-step">
+    <div class="field">
+      <label>الباسورد الرئيسي</label>
+      <input type="password" id="master-pin" placeholder="كلمة السر الرئيسية بتاعتك">
+    </div>
+    <button class="btn btn-primary" id="login-btn">دخول</button>
+    <p class="error-msg" id="login-error"></p>
+  </div>
+
+  <div id="control-step" style="display:none;">
+    <h2>⚙️ إعدادات عامة</h2>
+    <div class="field">
+      <label>رقم واتساب المطوّر (يظهر للعميل لو نسي كلمة السر وسؤال الأمان مع بعض)</label>
+      <input type="text" id="developer-whatsapp" placeholder="مثال: 201012345678" dir="ltr">
+      <p class="hint">بالكود الدولي من غير + أو أصفار في الأول، مثال: 20 ثم رقم الموبايل. تقدر تغيّره وقتما تحب من هنا.</p>
+    </div>
+    <button class="btn btn-secondary" id="save-developer-whatsapp-btn">حفظ الرقم</button>
+    <p class="error-msg" id="developer-whatsapp-error"></p>
+    <p class="ok-msg" id="developer-whatsapp-ok">اتحفظ ✅</p>
+
+    <h2>عيادات عملاءك</h2>
+    <div id="clinics-list"></div>
+    <p class="empty-hint" id="empty-hint" style="display:none;">لسه مفيش عيادات مضافة</p>
+
+    <div class="add-clinic-box">
+      <h2>➕ إضافة عيادة جديدة</h2>
+      <div class="field">
+        <label>معرّف العيادة (إنجليزي، بدون مسافات - مثال: dr-ahmed-clinic)</label>
+        <input type="text" id="new-clinic-id" placeholder="clinic-id" dir="ltr">
+      </div>
+      <div class="field">
+        <label>اسم العيادة</label>
+        <input type="text" id="new-clinic-name" placeholder="اسم العيادة">
+      </div>
+      <div class="field">
+        <label>كلمة سر ابتدائية للعيادة (هيدخل بيها العميل بعدين على لوحته)</label>
+        <input type="password" id="new-clinic-pin" placeholder="كلمة السر">
+      </div>
+      <div class="field">
+        <label>سؤال الأمان (اختياري، للاسترجاع لو العميل نسي كلمة السر)</label>
+        <input type="text" id="new-clinic-security-question" placeholder="مثال: اسم أول عيادة اشتغلت فيها؟">
+      </div>
+      <div class="field">
+        <label>إجابة سؤال الأمان (اختياري)</label>
+        <input type="text" id="new-clinic-security-answer" placeholder="الإجابة">
+      </div>
+      <button class="btn btn-primary" id="add-clinic-btn">إضافة العيادة</button>
+      <p class="error-msg" id="add-clinic-error"></p>
+      <p class="ok-msg" id="add-clinic-ok"></p>
+    </div>
+
+    <button class="btn btn-secondary" id="logout-btn" style="margin-top:18px;">تسجيل خروج</button>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
+const baseUrl = 'https://hagza-system.github.io/clinic-booking/';
+let currentPin = '';
+
+async function callApi(body) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+document.getElementById('login-btn').addEventListener('click', async () => {
+  const pin = document.getElementById('master-pin').value.trim();
+  const loginError = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+
+  if (!pin) {
+    loginError.textContent = 'من فضلك اكتب الباسورد';
+    loginError.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'جاري التحقق...';
+
+  try {
+    const result = await callApi({ action: 'listClinics', masterPin: pin });
+    btn.disabled = false;
+    btn.textContent = 'دخول';
+
+    if (!result.success) {
+      loginError.textContent = result.message || 'كلمة السر غير صحيحة';
+      loginError.style.display = 'block';
+      return;
+    }
+
+    loginError.style.display = 'none';
+    currentPin = pin;
+    document.getElementById('login-step').style.display = 'none';
+    document.getElementById('control-step').style.display = 'block';
+    renderClinics(result.clinics || []);
+
+    callApi({ action: 'getDeveloperWhatsapp', masterPin: pin }).then((r) => {
+      if (r.success) document.getElementById('developer-whatsapp').value = r.developerWhatsapp || '';
+    });
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'دخول';
+    loginError.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    loginError.style.display = 'block';
+  }
+});
+
+document.getElementById('master-pin').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('login-btn').click();
+});
+
+document.getElementById('save-developer-whatsapp-btn').addEventListener('click', async () => {
+  const value = document.getElementById('developer-whatsapp').value.trim();
+  const errorEl = document.getElementById('developer-whatsapp-error');
+  const okEl = document.getElementById('developer-whatsapp-ok');
+  const btn = document.getElementById('save-developer-whatsapp-btn');
+  errorEl.style.display = 'none';
+  okEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'جاري الحفظ...';
+  try {
+    const result = await callApi({ action: 'setDeveloperWhatsapp', masterPin: currentPin, developerWhatsapp: value });
+    btn.disabled = false;
+    btn.textContent = 'حفظ الرقم';
+    if (!result.success) {
+      errorEl.textContent = result.message || 'حصل خطأ، حاول تاني';
+      errorEl.style.display = 'block';
+      return;
+    }
+    okEl.style.display = 'block';
+    setTimeout(() => { okEl.style.display = 'none'; }, 2500);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'حفظ الرقم';
+    errorEl.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    errorEl.style.display = 'block';
+  }
+});
+
+function paymentStatus(nextDueDate) {
+  if (!nextDueDate) return { cls: 'none', label: '⚪ مفيش تاريخ استحقاق' };
+  const tz = 'Africa/Cairo';
+  const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
+  const daysDiff = Math.round((new Date(nextDueDate) - new Date(todayStr)) / 86400000);
+  if (daysDiff < 0) return { cls: 'overdue', label: `🔴 متأخر (${nextDueDate})` };
+  if (daysDiff <= 5) return { cls: 'soon', label: `🟡 مستحق قريب (${nextDueDate})` };
+  return { cls: 'paid', label: `🟢 لحد (${nextDueDate})` };
+}
+
+function renderClinics(clinics) {
+  const list = document.getElementById('clinics-list');
+  const emptyHint = document.getElementById('empty-hint');
+  list.innerHTML = '';
+  if (!clinics.length) {
+    emptyHint.style.display = 'block';
+    return;
+  }
+  emptyHint.style.display = 'none';
+  clinics.forEach((c) => {
+    const row = document.createElement('div');
+    row.className = 'clinic-row';
+    const pay = paymentStatus(c.nextDueDate);
+    row.innerHTML = `
+      <div>
+        <div class="clinic-name">${c.clinicName || c.clinicId}</div>
+        <div class="clinic-id">${c.clinicId}</div>
+        <span class="status-pill ${c.subscriptionActive ? 'active' : 'inactive'}">${c.subscriptionActive ? '✓ مفعّل' : '✗ موقوف'}</span>
+      </div>
+      <div class="clinic-actions">
+        <button class="toggle-btn ${c.subscriptionActive ? 'toggle-off' : 'toggle-on'}" data-action="toggle" data-id="${c.clinicId}" data-active="${c.subscriptionActive}">
+          ${c.subscriptionActive ? 'إيقاف' : 'تفعيل'}
+        </button>
+        <button class="icon-btn edit-btn" data-action="edit-open">تعديل الاسم</button>
+        <button class="icon-btn edit-btn" data-action="security-open">🔑 سؤال الأمان</button>
+        <button class="icon-btn edit-btn" data-action="reset-open">🔄 إعادة تعيين الباسورد</button>
+        <button class="icon-btn delete-btn" data-action="delete-open">حذف</button>
+      </div>
+      <div class="link-row">
+        <div class="link-pair">
+          <a class="link-btn booking" href="${baseUrl}?clinic=${encodeURIComponent(c.clinicId)}" target="_blank" rel="noopener">🔗 صفحة الحجز</a>
+          <button type="button" class="copy-btn" data-action="copy-booking" title="نسخ اللينك">📋</button>
+        </div>
+        <div class="link-pair">
+          <a class="link-btn dashboard" href="${baseUrl}dashboard-demo.html?clinic=${encodeURIComponent(c.clinicId)}" target="_blank" rel="noopener">🔗 لوحة العيادة</a>
+          <button type="button" class="copy-btn" data-action="copy-dashboard" title="نسخ اللينك">📋</button>
+        </div>
+      </div>
+      <div class="payment-box">
+        <div class="payment-row">
+          <span class="payment-pill ${pay.cls}">${pay.label}</span>
+          <button class="mark-paid-btn" data-action="mark-paid">✅ تم الدفع</button>
+        </div>
+        <button class="due-date-toggle" data-action="due-date-open">تعديل تاريخ الاستحقاق يدويًا</button>
+        <div class="due-date-edit">
+          <input type="date" class="due-date-input" value="${c.nextDueDate || ''}">
+          <button data-action="due-date-save">حفظ</button>
+        </div>
+        <p class="error-msg due-date-error"></p>
+      </div>
+      <div class="edit-box">
+        <div class="field">
+          <label>الاسم الجديد للعيادة</label>
+          <input type="text" class="edit-name-input" value="${(c.clinicName || '').replace(/"/g, '&quot;')}">
+        </div>
+        <p class="error-msg edit-error"></p>
+        <div class="inline-actions">
+          <button class="btn btn-secondary" data-action="edit-cancel">إلغاء</button>
+          <button class="btn btn-primary" data-action="edit-save">حفظ</button>
+        </div>
+      </div>
+      <div class="delete-box">
+        <p>عشان تأكد إنك عايز تمسح "${c.clinicName || c.clinicId}" خالص، اكتب معرّف العيادة (${c.clinicId}) في الخانة دي:</p>
+        <input type="text" class="delete-confirm-input" dir="ltr" placeholder="${c.clinicId}">
+        <p class="error-msg delete-error"></p>
+        <div class="inline-actions">
+          <button class="btn btn-secondary" data-action="delete-cancel">إلغاء</button>
+          <button class="btn btn-primary delete-btn" data-action="delete-confirm">حذف نهائي</button>
+        </div>
+      </div>
+      <div class="security-box">
+        <p class="security-info">لو العميل نسي الباسورد بيتسأل السؤال ده وهيتقارن بالإجابة، وتقدر تعدّلهم من هنا في أي وقت (بيتحدّثوا هنا تلقائي لو العميل غيّرهم من لوحته برضو).</p>
+        <div class="field">
+          <label>سؤال الأمان</label>
+          <input type="text" class="security-question-input" value="${(c.securityQuestion || '').replace(/"/g, '&quot;')}">
+        </div>
+        <div class="field">
+          <label>إجابة سؤال الأمان</label>
+          <input type="text" class="security-answer-input" value="${(c.securityAnswer || '').replace(/"/g, '&quot;')}">
+        </div>
+        <p class="error-msg security-error"></p>
+        <p class="ok-msg security-ok">اتحفظ ✅</p>
+        <div class="inline-actions">
+          <button class="btn btn-secondary" data-action="security-cancel">إلغاء</button>
+          <button class="btn btn-primary" data-action="security-save">حفظ</button>
+        </div>
+      </div>
+      <div class="reset-box">
+        <p class="security-info">هيتعمل باسورد جديد عشوائي للعيادة، وهيظهرلك هنا مرة واحدة عشان تبعته للعميل (مش هيتحفظ عندنا بعدها، لازم تنسخه فورًا).</p>
+        <p class="error-msg reset-error"></p>
+        <p class="reset-pin-result"></p>
+        <div class="inline-actions">
+          <button class="btn btn-secondary" data-action="reset-cancel">إلغاء</button>
+          <button class="btn btn-primary" data-action="reset-confirm">إنشاء باسورد جديد</button>
+        </div>
+      </div>
+    `;
+
+    const editBox = row.querySelector('.edit-box');
+    const deleteBox = row.querySelector('.delete-box');
+    const securityBox = row.querySelector('.security-box');
+    const resetBox = row.querySelector('.reset-box');
+
+    function wireCopyBtn(action, link) {
+      const btn = row.querySelector(`[data-action="${action}"]`);
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(link);
+        } catch (err) {
+          const ta = document.createElement('textarea');
+          ta.value = link;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        btn.textContent = '✓';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '📋';
+          btn.classList.remove('copied');
+        }, 1500);
+      });
+    }
+    wireCopyBtn('copy-booking', `${baseUrl}?clinic=${encodeURIComponent(c.clinicId)}`);
+    wireCopyBtn('copy-dashboard', `${baseUrl}dashboard-demo.html?clinic=${encodeURIComponent(c.clinicId)}`);
+
+    row.querySelector('[data-action="toggle"]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const clinicId = btn.dataset.id;
+      const newStatus = btn.dataset.active !== 'true';
+      btn.disabled = true;
+      const result = await callApi({ action: 'setSubscriptionStatus', masterPin: currentPin, clinicId, status: newStatus });
+      if (result.success) {
+        refreshClinics();
+      } else {
+        alert(result.message || 'حصل خطأ');
+        btn.disabled = false;
+      }
+    });
+
+    row.querySelector('[data-action="mark-paid"]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'جاري...';
+      const result = await callApi({ action: 'markClinicPaid', masterPin: currentPin, clinicId: c.clinicId });
+      if (result.success) {
+        refreshClinics();
+      } else {
+        alert(result.message || 'حصل خطأ');
+        btn.disabled = false;
+        btn.textContent = '✅ تم الدفع';
+      }
+    });
+
+    const dueDateEdit = row.querySelector('.due-date-edit');
+    row.querySelector('[data-action="due-date-open"]').addEventListener('click', () => {
+      dueDateEdit.classList.toggle('open');
+    });
+    row.querySelector('[data-action="due-date-save"]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const errorEl = row.querySelector('.due-date-error');
+      const newDate = row.querySelector('.due-date-input').value;
+      errorEl.style.display = 'none';
+      btn.disabled = true;
+      const result = await callApi({ action: 'setDueDate', masterPin: currentPin, clinicId: c.clinicId, dueDate: newDate });
+      btn.disabled = false;
+      if (result.success) {
+        refreshClinics();
+      } else {
+        errorEl.textContent = result.message || 'حصل خطأ';
+        errorEl.style.display = 'block';
+      }
+    });
+
+    row.querySelector('[data-action="edit-open"]').addEventListener('click', () => {
+      deleteBox.classList.remove('open');
+      securityBox.classList.remove('open');
+      resetBox.classList.remove('open');
+      editBox.classList.toggle('open');
+    });
+    row.querySelector('[data-action="edit-cancel"]').addEventListener('click', () => {
+      editBox.classList.remove('open');
+    });
+    row.querySelector('[data-action="edit-save"]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const errorEl = row.querySelector('.edit-error');
+      const newName = row.querySelector('.edit-name-input').value.trim();
+      errorEl.style.display = 'none';
+      if (!newName) {
+        errorEl.textContent = 'من فضلك اكتب الاسم';
+        errorEl.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      const result = await callApi({ action: 'updateClinicName', masterPin: currentPin, clinicId: c.clinicId, clinicName: newName });
+      btn.disabled = false;
+      if (result.success) {
+        refreshClinics();
+      } else {
+        errorEl.textContent = result.message || 'حصل خطأ';
+        errorEl.style.display = 'block';
+      }
+    });
+
+    row.querySelector('[data-action="delete-open"]').addEventListener('click', () => {
+      editBox.classList.remove('open');
+      securityBox.classList.remove('open');
+      resetBox.classList.remove('open');
+      deleteBox.classList.toggle('open');
+    });
+    row.querySelector('[data-action="delete-cancel"]').addEventListener('click', () => {
+      deleteBox.classList.remove('open');
+    });
+    row.querySelector('[data-action="delete-confirm"]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const errorEl = row.querySelector('.delete-error');
+      const typed = row.querySelector('.delete-confirm-input').value.trim();
+      errorEl.style.display = 'none';
+      if (typed !== c.clinicId) {
+        errorEl.textContent = 'المعرّف اللي كتبته مش مطابق، من فضلك اكتبه زي ما هو بالظبط';
+        errorEl.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      const result = await callApi({ action: 'deleteClinic', masterPin: currentPin, clinicId: c.clinicId });
+      btn.disabled = false;
+      if (result.success) {
+        refreshClinics();
+      } else {
+        errorEl.textContent = result.message || 'حصل خطأ';
+        errorEl.style.display = 'block';
+      }
+    });
+
+    row.querySelector('[data-action="security-open"]').addEventListener('click', () => {
+      editBox.classList.remove('open');
+      deleteBox.classList.remove('open');
+      resetBox.classList.remove('open');
+      securityBox.classList.toggle('open');
+    });
+    row.querySelector('[data-action="security-cancel"]').addEventListener('click', () => {
+      securityBox.classList.remove('open');
+    });
+    row.querySelector('[data-action="security-save"]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const errorEl = row.querySelector('.security-error');
+      const okEl = row.querySelector('.security-ok');
+      const securityQuestion = row.querySelector('.security-question-input').value.trim();
+      const securityAnswer = row.querySelector('.security-answer-input').value.trim();
+      errorEl.style.display = 'none';
+      okEl.style.display = 'none';
+      btn.disabled = true;
+      const result = await callApi({ action: 'setClinicSecurityQA', masterPin: currentPin, clinicId: c.clinicId, securityQuestion, securityAnswer });
+      btn.disabled = false;
+      if (result.success) {
+        c.securityQuestion = securityQuestion;
+        c.securityAnswer = securityAnswer;
+        okEl.style.display = 'block';
+      } else {
+        errorEl.textContent = result.message || 'حصل خطأ';
+        errorEl.style.display = 'block';
+      }
+    });
+
+    row.querySelector('[data-action="reset-open"]').addEventListener('click', () => {
+      editBox.classList.remove('open');
+      deleteBox.classList.remove('open');
+      securityBox.classList.remove('open');
+      row.querySelector('.reset-pin-result').style.display = 'none';
+      row.querySelector('.reset-error').style.display = 'none';
+      resetBox.classList.toggle('open');
+    });
+    row.querySelector('[data-action="reset-cancel"]').addEventListener('click', () => {
+      resetBox.classList.remove('open');
+    });
+    row.querySelector('[data-action="reset-confirm"]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const errorEl = row.querySelector('.reset-error');
+      const resultEl = row.querySelector('.reset-pin-result');
+      errorEl.style.display = 'none';
+      resultEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'جاري...';
+      const result = await callApi({ action: 'resetClinicPin', masterPin: currentPin, clinicId: c.clinicId });
+      btn.disabled = false;
+      btn.textContent = 'إنشاء باسورد جديد';
+      if (result.success) {
+        resultEl.textContent = `الباسورد الجديد: ${result.newPin} — انسخه وابعته للعميل دلوقتي`;
+        resultEl.style.display = 'block';
+      } else {
+        errorEl.textContent = result.message || 'حصل خطأ';
+        errorEl.style.display = 'block';
+      }
+    });
+
+    list.appendChild(row);
+  });
+}
+
+async function refreshClinics() {
+  const result = await callApi({ action: 'listClinics', masterPin: currentPin });
+  if (result.success) renderClinics(result.clinics || []);
+}
+
+document.getElementById('add-clinic-btn').addEventListener('click', async () => {
+  const clinicId = document.getElementById('new-clinic-id').value.trim();
+  const clinicName = document.getElementById('new-clinic-name').value.trim();
+  const adminPin = document.getElementById('new-clinic-pin').value.trim();
+  const securityQuestion = document.getElementById('new-clinic-security-question').value.trim();
+  const securityAnswer = document.getElementById('new-clinic-security-answer').value.trim();
+  const errorEl = document.getElementById('add-clinic-error');
+  const okEl = document.getElementById('add-clinic-ok');
+  const btn = document.getElementById('add-clinic-btn');
+  errorEl.style.display = 'none';
+  okEl.style.display = 'none';
+
+  if (!clinicId || !clinicName || !adminPin) {
+    errorEl.textContent = 'من فضلك املأ كل الحقول';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'جاري الإضافة...';
+  const result = await callApi({ action: 'createClinic', masterPin: currentPin, clinicId, clinicName, adminPin, securityQuestion, securityAnswer });
+  btn.disabled = false;
+  btn.textContent = 'إضافة العيادة';
+
+  if (!result.success) {
+    errorEl.textContent = result.message || 'حصل خطأ';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  okEl.innerHTML = `تمت الإضافة ✅ — لينكات العميل تحت في القايمة`;
+  okEl.style.display = 'block';
+  document.getElementById('new-clinic-id').value = '';
+  document.getElementById('new-clinic-name').value = '';
+  document.getElementById('new-clinic-pin').value = '';
+  document.getElementById('new-clinic-security-question').value = '';
+  document.getElementById('new-clinic-security-answer').value = '';
+  refreshClinics();
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  currentPin = '';
+  document.getElementById('control-step').style.display = 'none';
+  document.getElementById('login-step').style.display = 'block';
+  document.getElementById('master-pin').value = '';
+});
+</script>
+</body>
+</html>
+
