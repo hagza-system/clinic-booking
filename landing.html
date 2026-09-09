@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حجزة لأصحاب العيادات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Changa:wght@600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --surface-alt: #f2f6fb;
+    --ink: #14202b;
+    --muted: #5b6672;
+    --line: #e3e8ee;
+    --primary: #185fa5;
+    --primary-dark: #0c3a66;
+    --accent: #dd8f26;
+    --accent-soft: #fbeed9;
+    --on-primary: #ffffff;
+    --shadow: 0 24px 50px rgba(20,32,43,0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10161d;
+      --surface-alt: #182029;
+      --ink: #eef1f5;
+      --muted: #99a3ae;
+      --line: #29323c;
+      --primary: #5b9bdb;
+      --primary-dark: #8fbde8;
+      --accent: #eeae53;
+      --accent-soft: #362a17;
+      --on-primary: #0b1620;
+      --shadow: 0 24px 50px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10161d;
+    --surface-alt: #182029;
+    --ink: #eef1f5;
+    --muted: #99a3ae;
+    --line: #29323c;
+    --primary: #5b9bdb;
+    --primary-dark: #8fbde8;
+    --accent: #eeae53;
+    --accent-soft: #362a17;
+    --on-primary: #0b1620;
+    --shadow: 0 24px 50px rgba(0,0,0,0.5);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.65; font-size: 15.5px;
+  }
+  h1, h2, h3 { font-family: 'Changa', 'IBM Plex Sans Arabic', sans-serif; text-wrap: balance; font-weight: 700; }
+  img, svg { max-width: 100%; }
+  a { color: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 64px 0; }
+  @media (max-width: 720px) { section { padding: 44px 0; } }
+
+  /* ===== ظهور تدريجي مع التمرير ===== */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s cubic-bezier(.2,.7,.3,1), transform .6s cubic-bezier(.2,.7,.3,1); }
+  .reveal.in-view { opacity: 1; transform: translateY(0); }
+  .reveal-stagger > * { opacity: 0; transform: translateY(16px); transition: opacity .5s ease, transform .5s ease; }
+  .reveal-stagger.in-view > * { opacity: 1; transform: translateY(0); }
+  .reveal-stagger.in-view > *:nth-child(1) { transition-delay: .03s; }
+  .reveal-stagger.in-view > *:nth-child(2) { transition-delay: .09s; }
+  .reveal-stagger.in-view > *:nth-child(3) { transition-delay: .15s; }
+  .reveal-stagger.in-view > *:nth-child(4) { transition-delay: .21s; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, .reveal-stagger > *, .btn, .btn-primary::before, .pricing-box::before { transition: none !important; animation: none !important; }
+    .reveal, .reveal-stagger > * { opacity: 1 !important; transform: none !important; }
+  }
+
+  /* ===== شريط تقدّم التمرير ===== */
+  .scroll-progress {
+    position: fixed; top: 0; right: 0; left: 0; height: 3px; z-index: 60;
+    background: var(--primary); transform-origin: right; transform: scaleX(0);
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 40;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .header-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; }
+  .brand { display: flex; align-items: center; gap: 9px; }
+  .brand-mark {
+    width: 32px; height: 32px; border-radius: 8px; background: var(--primary);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .brand-name { font-family: 'Changa', sans-serif; font-weight: 700; font-size: 19px; }
+  .btn {
+    position: relative; display: inline-flex; align-items: center; gap: 8px; font-family: 'IBM Plex Sans Arabic', sans-serif;
+    font-weight: 600; font-size: 14.5px; border-radius: 10px; cursor: pointer; text-decoration: none;
+    border: 1.5px solid transparent; transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .2s, border-color .15s, background .15s;
+    white-space: nowrap; overflow: hidden;
+  }
+  .btn-primary { background: var(--primary); color: var(--on-primary); padding: 12px 20px; }
+  .btn-primary::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.32) 40%, transparent 60%);
+    transform: translateX(-120%); transition: transform .55s ease;
+  }
+  .btn-primary:hover { transform: translateY(-2px) scale(1.015); box-shadow: 0 12px 26px color-mix(in srgb, var(--primary) 45%, transparent); }
+  .btn-primary:hover::before { transform: translateX(120%); }
+  .btn-primary:active { transform: translateY(0) scale(.98); box-shadow: 0 6px 14px color-mix(in srgb, var(--primary) 35%, transparent); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); padding: 9.5px 16px; }
+  .btn-ghost:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+  .btn-sm { padding: 8px 15px; font-size: 13px; }
+  .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* ===== الهيرو ===== */
+  .hero { padding-top: 56px; padding-bottom: 30px; }
+  .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; }
+  @keyframes heroIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .hero-copy { animation: heroIn .7s cubic-bezier(.2,.7,.3,1) both; }
+  .hero .ticket-mock { animation: heroIn .8s .12s cubic-bezier(.2,.7,.3,1) both; }
+  @media (prefers-reduced-motion: reduce) { .hero-copy, .hero .ticket-mock { animation: none; } }
+  @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; gap: 36px; } }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600;
+    color: var(--primary-dark); background: var(--surface-alt); border: 1px solid var(--line);
+    padding: 6px 13px; border-radius: 100px; margin-bottom: 20px;
+  }
+  .hero h1 { font-size: 42px; line-height: 1.18; margin-bottom: 16px; letter-spacing: -.3px; }
+  @media (max-width: 720px) { .hero h1 { font-size: 30px; } }
+  .hero .lede { font-size: 16.5px; color: var(--muted); max-width: 42ch; margin-bottom: 26px; }
+  .hero-ctas { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+  .price-tag { font-size: 13.5px; color: var(--muted); }
+  .price-tag b { color: var(--ink); font-weight: 700; }
+  .trust-row { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+  .trust-row .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
+
+  .ticket-mock {
+    background: var(--bg); border-radius: 22px; box-shadow: var(--shadow);
+    max-width: 320px; margin-inline-start: auto; overflow: hidden; border: 1px solid var(--line);
+  }
+  @media (max-width: 900px) { .ticket-mock { margin-inline: auto; } }
+  .ticket-mock .top { background: var(--primary); padding: 20px 20px 24px; position: relative; }
+  .ticket-mock .top .clinic { color: #fff; font-family: 'Changa', sans-serif; font-weight: 700; font-size: 16px; }
+  .ticket-mock .top .sub { color: rgba(255,255,255,.78); font-size: 11.5px; margin-top: 3px; }
+  .ticket-mock .badge {
+    position: absolute; top: 18px; left: 18px; background: rgba(255,255,255,.18); color: #fff;
+    font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 7px;
+  }
+  .perf { position: relative; height: 0; }
+  .perf::before, .perf::after {
+    content: ''; position: absolute; top: -10px; width: 20px; height: 20px; border-radius: 50%; background: var(--bg);
+  }
+  .perf::before { right: -10px; } .perf::after { left: -10px; }
+  .perf span { position: absolute; top: -1px; left: 10px; right: 10px; border-top: 2px dashed var(--line); display: block; }
+  .ticket-mock .body { padding: 20px; }
+  .mock-row { display: flex; justify-content: space-between; padding: 9px 0; font-size: 13px; border-top: 1px solid var(--line); }
+  .mock-row:first-child { border-top: none; }
+  .mock-row span { color: var(--muted); }
+  .mock-row b { font-weight: 600; }
+  .mock-confirm {
+    margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: #25D366; color: #fff; font-size: 12.5px; font-weight: 600; padding: 10px; border-radius: 10px;
+  }
+
+  /* ===== فاصل مسنن ===== */
+  .divider { position: relative; height: 1px; background: var(--line); margin: 0; }
+
+  /* ===== المقارنة المختصرة ===== */
+  .compare-strip { display: flex; flex-wrap: wrap; gap: 10px; }
+  .compare-chip {
+    display: flex; align-items: center; gap: 9px; background: var(--surface-alt); border: 1px solid var(--line);
+    border-radius: 100px; padding: 10px 16px 10px 12px; font-size: 13.5px;
+    transition: transform .2s cubic-bezier(.2,.7,.3,1), border-color .2s, box-shadow .2s;
+  }
+  .compare-chip:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 40%, var(--line)); box-shadow: 0 8px 18px color-mix(in srgb, var(--primary) 10%, transparent); }
+  .compare-chip .before { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 55%, transparent); }
+  .compare-chip .arrow { color: var(--accent); font-weight: 700; }
+  .compare-chip .after { font-weight: 600; }
+
+  /* ===== المميزات ===== */
+  .section-head { max-width: 56ch; margin-bottom: 34px; }
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--primary); margin-bottom: 8px; }
+  .section-head h2 { font-size: 27px; margin-bottom: 8px; }
+  @media (max-width: 720px) { .section-head h2 { font-size: 22px; } }
+  .section-head p { color: var(--muted); font-size: 14.5px; }
+
+  .feature-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  @media (max-width: 800px) { .feature-row { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .feature-row { grid-template-columns: 1fr; } }
+  .feature-item { background: var(--bg); padding: 22px 20px; transition: background .2s; }
+  .feature-item:hover { background: var(--surface-alt); }
+  .feature-item .fico { font-size: 20px; margin-bottom: 12px; display: block; transition: transform .25s cubic-bezier(.34,1.4,.64,1); }
+  .feature-item:hover .fico { transform: scale(1.18) rotate(-4deg); }
+  .feature-item h3 { font-size: 14.5px; margin-bottom: 6px; font-family: 'IBM Plex Sans Arabic', sans-serif; font-weight: 700; }
+  .feature-item p { font-size: 12.5px; color: var(--muted); }
+
+  /* ===== إزاي بيشتغل ===== */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  @media (max-width: 800px) { .steps { grid-template-columns: 1fr; gap: 26px; } }
+  .step .num {
+    font-family: 'Changa', sans-serif; font-size: 30px; font-weight: 700; color: var(--accent);
+    line-height: 1; margin-bottom: 12px; font-variant-numeric: tabular-nums;
+  }
+  .step h3 { font-size: 15.5px; margin-bottom: 6px; }
+  .step p { font-size: 13px; color: var(--muted); max-width: 32ch; }
+
+  /* ===== جرّب بنفسك ===== */
+  .demo-panel {
+    background: var(--ink); border-radius: 22px; padding: 40px; display: flex; align-items: center;
+    justify-content: space-between; gap: 24px; color: var(--bg); flex-wrap: wrap;
+  }
+  .demo-panel h2 { font-size: 21px; margin-bottom: 6px; color: var(--bg); }
+  .demo-panel p { color: color-mix(in srgb, var(--bg) 68%, transparent); font-size: 13.5px; }
+  .demo-panel .btn-primary { background: var(--accent); color: #22160a; flex-shrink: 0; }
+
+  /* ===== السعر ===== */
+  .pricing-box {
+    position: relative; background: var(--surface-alt); border: 1px solid var(--line); border-radius: 18px; padding: 34px;
+    text-align: center; overflow: hidden; transition: border-color .25s, box-shadow .25s;
+  }
+  .pricing-box:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); box-shadow: 0 18px 40px color-mix(in srgb, var(--primary) 14%, transparent); }
+  .pricing-box::before {
+    content: ''; position: absolute; inset: -40% -10% auto -10%; height: 220px; border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 20%, transparent), transparent 72%);
+    animation: priceGlow 5s ease-in-out infinite; pointer-events: none;
+  }
+  @keyframes priceGlow { 0%, 100% { opacity: .55; transform: translateY(0) scale(1); } 50% { opacity: 1; transform: translateY(10px) scale(1.06); } }
+  .pricing-box .amount { position: relative; font-family: 'Changa', sans-serif; font-size: 46px; font-weight: 700; color: var(--primary); display: inline-block; transition: transform .3s cubic-bezier(.2,.7,.3,1); }
+  .pricing-box:hover .amount { transform: scale(1.045); }
+  .pricing-box .amount span { font-size: 16px; font-weight: 500; color: var(--muted); }
+  .pricing-box .desc { position: relative; color: var(--muted); font-size: 13.5px; margin: 10px 0 22px; }
+  .pricing-box .feat-list { position: relative; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-bottom: 24px; }
+
+  footer { border-top: 1px solid var(--line); padding: 30px 0; }
+  .foot-row { display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .foot-links { display: flex; gap: 16px; flex-wrap: wrap; }
+  .foot-links a:hover { color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="scroll-progress"></div>
+
+<header>
+  <div class="wrap header-row">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 10.5C4 8.5 5.5 7 7.5 7h9c2 0 3.5 1.5 3.5 3.5v6C20 18.5 18.5 20 16.5 20h-9C5.5 20 4 18.5 4 16.5v-6Z" stroke="#fff" stroke-width="1.7"/><path d="M8 5v3M16 5v3M4 11h16" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M8.5 14.5l2 2 4-4" stroke="#dd8f26" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="brand-name">حجزم</span>
+    </div>
+    <a class="btn btn-primary btn-sm" href="https://wa.me/201044772311?text=%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1%20%D8%B9%D9%86%20%D8%AD%D8%AC%D8%B2%D8%A9" target="_blank" rel="noopener">تواصل واتساب</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">لأصحاب العيادات</span>
+        <h1>خلّي العيادة تحجز لوحدها</h1>
+        <p class="lede">نظام حجز إلكتروني لعيادتك: المريض يحجز بنفسه في ثواني، وتوصلك التفاصيل جاهزة للوحة التحكم الخاصة بك وعلى واتساب — من غير حجزين في نفس الميعاد.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="https://wa.me/201044772311?text=%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B4%D8%AA%D8%B1%D9%83%20%D9%81%D9%8A%20%D8%AD%D8%AC%D8%B2%D8%A9" target="_blank" rel="noopener">اشترك دلوقتي</a>
+          <span class="price-tag">الاشتراك <b>٥٠٠ جنيه</b> شهريًا فقط</span>
+        </div>
+        <div class="trust-row">
+          <span>تركيب في نفس اليوم</span>
+          <span class="dot"></span>
+          <span>دعم مباشر على واتساب</span>
+          <span class="dot"></span>
+          <span>بدون عقود طويلة</span>
+        </div>
+      </div>
+
+      <div class="ticket-mock">
+        <div class="top">
+          <span class="badge">تم التأكيد</span>
+          <div class="clinic">عيادة د. مروان الجديدة</div>
+          <div class="sub">نظام حجز مواعيد</div>
+        </div>
+        <div class="perf"><span></span></div>
+        <div class="body">
+          <div class="mock-row"><span>الاسم</span><b>سارة عادل</b></div>
+          <div class="mock-row"><span>الخدمة</span><b>كشف عام</b></div>
+          <div class="mock-row"><span>التاريخ</span><b>الأحد 14 سبتمبر</b></div>
+          <div class="mock-row"><span>الوقت</span><b>05:30 م</b></div>
+          <div class="mock-confirm">📱 تم إرسال التأكيد على واتساب</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap"><div class="divider"></div></div>
+
+  <section id="problem">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="kicker">الفرق</div>
+        <h2>نفس اليوم، شغل أقل</h2>
+      </div>
+      <div class="compare-strip reveal-stagger">
+        <div class="compare-chip"><span class="before">مكالمات طول اليوم</span><span class="arrow">←</span><span class="after">حجز أونلاين بنفسه</span></div>
+        <div class="compare-chip"><span class="before">حجزين في نفس الميعاد</span><span class="arrow">←</span><span class="after">منع تلقائي للتعارض</span></div>
+        <div class="compare-chip"><span class="before">مرضى بينسوا الميعاد</span><span class="arrow">←</span><span class="after">تأكيد واتساب فوري</span></div>
+        <div class="compare-chip"><span class="before">ورق وسجلات متفرقة</span><span class="arrow">←</span><span class="after">لوحة تحكم واحدة</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap"><div class="divider"></div></div>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="kicker">المميزات</div>
+        <h2>مبني لعيادات مصر تحديدًا</h2>
+      </div>
+      <div class="feature-row reveal-stagger">
+        <div class="feature-item">
+          <span class="fico">🚫</span>
+          <h3>منع التكرار</h3>
+          <p>مينفعش نفس الرقم يحجز مرتين في يوم واحد.</p>
+        </div>
+        <div class="feature-item">
+          <span class="fico">📱</span>
+          <h3>تأكيد واتساب</h3>
+          <p>تفاصيل الحجز توصلك فورًا لحظة التأكيد.</p>
+        </div>
+        <div class="feature-item">
+          <span class="fico">🌐</span>
+          <h3>5 لغات</h3>
+          <p>عربي، إنجليزي، فرنساوي، إسباني، إيطالي.</p>
+        </div>
+        <div class="feature-item">
+          <span class="fico">🔐</span>
+          <h3>لوحة تحكم</h3>
+          <p>تتحكم في المواعيد والخدمات بكلمة سر.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap"><div class="divider"></div></div>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="kicker">3 خطوات</div>
+        <h2>من التواصل لأول حجز</h2>
+      </div>
+      <div class="steps reveal-stagger">
+        <div class="step">
+          <div class="num">01</div>
+          <h3>ابعتلنا بيانات عيادتك</h3>
+          <p>اسم العيادة، أيام العمل، والخدمات — على واتساب.</p>
+        </div>
+        <div class="step">
+          <div class="num">02</div>
+          <h3>هنسلّمك لينك عيادتك</h3>
+          <p>حطّه في بايو إنستجرام والفيسبوك.</p>
+        </div>
+        <div class="step">
+          <div class="num">03</div>
+          <h3>استلم الحجوزات جاهزة</h3>
+          <p>كل حجز بيوصلك على واتساب فورًا.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap"><div class="divider"></div></div>
+
+  <section id="demo">
+    <div class="wrap">
+      <div class="demo-panel reveal">
+        <div>
+          <h2>مش هنقولك بس — جرّب بنفسك</h2>
+          <p>افتح نفس الصفحة اللي هيشوفها مريضك واحجز موعد تجريبي.</p>
+        </div>
+        <a class="btn btn-primary btn-sm" href="https://hagza-system.github.io/clinic-booking/" target="_blank" rel="noopener">افتح صفحة الحجز ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <div class="pricing-box reveal">
+        <div class="amount">٥٠٠ <span>جنيه / شهريًا</span></div>
+        <p class="desc">اشتراك واحد، كل الخدمة — بدون رسوم تركيب.</p>
+        <div class="feat-list">
+          <span>حجوزات بلا حد أقصى</span>
+          <span>دعم فني مباشر</span>
+          <span>إلغاء في أي وقت</span>
+        </div>
+        <a class="btn btn-primary" href="https://wa.me/201044772311?text=%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B4%D8%AA%D8%B1%D9%83%20%D9%81%D9%8A%20%D8%AD%D8%AC%D8%B2%D8%A9" target="_blank" rel="noopener">تواصل معانا على واتساب</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>© 2026 حجزة — نظام حجز مواعيد للعيادات</span>
+    <div class="foot-links">
+      <a href="mailto:hagza.system@gmail.com">hagza.system@gmail.com</a>
+      <a href="https://www.facebook.com/hagzasystem/" target="_blank" rel="noopener">فيسبوك</a>
+      <a href="https://www.instagram.com/hagza.system/" target="_blank" rel="noopener">إنستجرام</a>
+    </div>
+  </div>
+</footer>
+
+<noscript><style>.reveal, .reveal-stagger > * { opacity: 1 !important; transform: none !important; }</style></noscript>
+<script>
+(function () {
+  try {
+    var reveals = document.querySelectorAll('.reveal, .reveal-stagger');
+    if (!('IntersectionObserver' in window) || !reveals.length) {
+      reveals.forEach(function (el) { el.classList.add('in-view'); });
+    } else {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          entry.target.classList.toggle('in-view', entry.isIntersecting);
+        });
+      }, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
+      reveals.forEach(function (el) { io.observe(el); });
+    }
+  } catch (e) {
+    document.querySelectorAll('.reveal, .reveal-stagger').forEach(function (el) { el.classList.add('in-view'); });
+  }
+
+  try {
+    var bar = document.getElementById('scroll-progress');
+    var onScroll = function () {
+      var h = document.documentElement;
+      var max = h.scrollHeight - h.clientHeight;
+      var ratio = max > 0 ? h.scrollTop / max : 0;
+      bar.style.transform = 'scaleX(' + ratio + ')';
+    };
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
