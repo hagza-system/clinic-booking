@@ -171,6 +171,56 @@
   }
   .btn-primary:hover { background: var(--primary-dark); }
 
+  /* ===== الخدمات الإضافية (Add-ons) ===== */
+  .addons-entry {
+    width: 100%; display: flex; align-items: center; gap: 12px; margin-top: 6px; margin-bottom: 4px;
+    padding: 14px 15px; border-radius: 13px; border: 1.5px solid var(--line); background: var(--bg);
+    cursor: pointer; font-family: inherit; text-align: right; transition: border-color .15s;
+  }
+  .addons-entry:hover { border-color: var(--primary); }
+  .addons-entry .addons-icon {
+    width: 34px; height: 34px; border-radius: 10px; background: var(--primary-tint);
+    display: flex; align-items: center; justify-content: center; font-size: 16px; flex: 0 0 auto;
+  }
+  .addons-entry .addons-entry-text { flex: 1; min-width: 0; }
+  .addons-entry .addons-entry-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .addons-entry .addons-entry-hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .addons-entry .status-pill {
+    font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; white-space: nowrap; flex: 0 0 auto;
+  }
+  .status-pill.none { background: #efece5; color: var(--muted); }
+  .status-pill.active { background: #eaf7ef; color: #1f9d55; }
+  .addons-entry .chevron { font-size: 15px; color: var(--muted); flex: 0 0 auto; }
+
+  .screen-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .back-btn {
+    width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid var(--line); background: #fff;
+    color: var(--ink); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  }
+  .back-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  .addon-list { display: flex; flex-direction: column; gap: 14px; }
+  .addon-card { border-radius: 16px; padding: 18px; border: 1.5px solid var(--line); background: var(--bg); }
+  .addon-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .addon-name { font-family: 'El Messiri', sans-serif; font-size: 15.5px; font-weight: 700; color: var(--ink); }
+  .addon-price {
+    font-size: 12.5px; font-weight: 700; color: var(--primary-dark); background: var(--primary-tint);
+    border-radius: 999px; padding: 5px 11px; white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+  .addon-desc { font-size: 13px; line-height: 1.75; color: var(--ink); opacity: .85; margin-bottom: 14px; }
+  .addon-cta {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 44px;
+    border-radius: 11px; border: none; background: #25D366; color: #fff; text-decoration: none;
+    font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background .15s;
+  }
+  .addon-cta:hover { background: #128C7E; }
+  .addon-active-badge {
+    display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #1f9d55;
+    background: #eaf7ef; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;
+  }
+  .addon-active-note { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+  .addon-list-footnote { font-size: 11.5px; color: var(--muted); text-align: center; margin-top: 16px; line-height: 1.6; }
+
   /* ===== حجوزاتي السابقة ===== */
   .mybooking-card { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
   .mybooking-card .mb-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
@@ -324,7 +374,7 @@
 <!-- لوحة الإعدادات -->
 <div class="modal-overlay" id="settings-modal">
   <div class="modal">
-    <h2>إعدادات العيادة</h2>
+    <h2 id="settings-modal-heading">إعدادات العيادة</h2>
 
     <div id="pin-step">
       <div class="field">
@@ -434,11 +484,31 @@
         <input type="text" id="s-securityAnswer" placeholder="اكتب الإجابة">
         <p class="hint">لو نسيت كلمة السر والإجابة مع بعض، تقدر تتواصل مع مطوّر النظام يديك القيم من عنده.</p>
       </div>
+
+      <button type="button" class="addons-entry" id="open-addons-screen">
+        <span class="addons-icon">🎁</span>
+        <span class="addons-entry-text">
+          <span class="addons-entry-title">الخدمات الإضافية</span>
+          <span class="addons-entry-hint" id="addons-entry-hint">خدمة واحدة متاحة</span>
+        </span>
+        <span class="status-pill none" id="addons-entry-pill">غير مفعّلة</span>
+        <span class="chevron">‹</span>
+      </button>
+
       <div class="modal-actions">
         <button class="btn-secondary" id="cancel-settings">إلغاء</button>
         <button class="btn-primary" id="save-settings">حفظ التعديلات</button>
       </div>
       <p class="error-msg" id="save-error">حصل خطأ، حاول تاني</p>
+    </div>
+
+    <div id="addons-screen" style="display:none;">
+      <div class="screen-head">
+        <button type="button" class="back-btn" id="back-to-settings-form">›</button>
+        <h2 style="margin:0;">الخدمات الإضافية</h2>
+      </div>
+      <div class="addon-list" id="addon-list"></div>
+      <p class="addon-list-footnote">كل خدمة جديدة هتتضاف هنا لوحدها — شكل الإعدادات الأساسية مش هيتأثر مهما زاد عدد الخدمات.</p>
     </div>
   </div>
 </div>
@@ -496,6 +566,16 @@
 const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
 // ====== معرّف العيادة بتاعتك - بيتقرأ من رابط الصفحة (?clinic=xxx)، ولو مفيش بياخد demo-clinic افتراضياً ======
 const CLINIC_ID = new URLSearchParams(location.search).get('clinic') || "demo-clinic";
+
+// كتالوج الخدمات الإضافية المدفوعة - نفس القائمة المستخدمة في الباك إند والماستر (id لازم يتطابق)
+const ADDONS_CATALOG = [
+  {
+    id: 'followup',
+    name: 'مواعيد المتابعة',
+    priceLabel: '٣٠٠ جنيه / شهريًا',
+    description: 'لو بتتابعي مع مرضاكي بشكل دوري (جلسات نفسية، تخاطب، علاج طبيعي، تغذية...)، الخدمة دي بتخليكي تحددي ميعاد الجلسة الجاية للمريض بنفسك بدل ما يحجزها هو. بتكتبي اسم المريض ورقمه والميعاد، والنظام يبعتله رسالة واتساب فيها الميعاد جاهزة للإرسال — ولما المريض يأكّد، بيتسجل تلقائي في جدولك. من غير ورقة، ومن غير ما تحجزي كل حالة يدوي.'
+  }
+];
 
 let appData = { settings: {}, bookings: [] };
 let selectedService = null;
@@ -1027,9 +1107,11 @@ const settingsModal = document.getElementById('settings-modal');
 
 document.getElementById('open-settings').addEventListener('click', () => {
   settingsModal.classList.add('open');
+  document.getElementById('settings-modal-heading').style.display = 'block';
   document.getElementById('pin-step').style.display = 'block';
   document.getElementById('recover-form').style.display = 'none';
   document.getElementById('settings-form').style.display = 'none';
+  document.getElementById('addons-screen').style.display = 'none';
   document.getElementById('pin-input').value = '';
   document.getElementById('pin-error').style.display = 'none';
 });
@@ -1094,6 +1176,8 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     document.getElementById('s-vacationNote').value = s.vacationNote || '';
     document.getElementById('s-clinicWhatsapp').value = s.clinicWhatsapp || '';
     document.getElementById('s-mapsLink').value = s.mapsLink || '';
+
+    renderAddonsEntry();
   } catch (err) {
     submitBtn.disabled = false;
     pinError.textContent = 'حصل خطأ في الاتصال، حاول تاني';
@@ -1212,6 +1296,63 @@ document.getElementById('save-settings').addEventListener('click', async () => {
     saveBtn.disabled = false;
     saveBtn.textContent = 'حفظ التعديلات';
   }
+});
+
+// ====== الخدمات الإضافية (Add-ons) ======
+function renderAddonsEntry() {
+  const addons = (appData.settings && appData.settings.addons) || {};
+  const activeCount = ADDONS_CATALOG.filter((a) => addons[a.id]).length;
+  const hintEl = document.getElementById('addons-entry-hint');
+  const pillEl = document.getElementById('addons-entry-pill');
+  if (activeCount > 0) {
+    hintEl.textContent = activeCount === 1 ? 'خدمة واحدة مفعّلة' : `${activeCount} خدمات مفعّلة`;
+    pillEl.textContent = 'مفعّلة';
+    pillEl.className = 'status-pill active';
+  } else {
+    hintEl.textContent = ADDONS_CATALOG.length === 1 ? 'خدمة واحدة متاحة' : `${ADDONS_CATALOG.length} خدمات متاحة`;
+    pillEl.textContent = 'غير مفعّلة';
+    pillEl.className = 'status-pill none';
+  }
+}
+
+function addonCardHTML(addon, isActive) {
+  if (isActive) {
+    return `
+      <div class="addon-card">
+        <div class="addon-active-badge">✅ خدمة "${addon.name}" مفعّلة على عيادتك</div>
+        <p class="addon-active-note">تقدر تضيف وتتابع مواعيد المرضى من قسم "مواعيد متابعة" في لوحة التحكم بتاعتك.</p>
+      </div>`;
+  }
+  const developerWhatsapp = toWhatsappNumber(appData.settings.developerWhatsapp);
+  const clinicName = appData.settings.clinicName || 'العيادة';
+  const waText = encodeURIComponent(`مرحبًا، عايز أشترك في خدمة "${addon.name}" لعيادة ${clinicName}`);
+  const waHref = developerWhatsapp ? `https://wa.me/${developerWhatsapp}?text=${waText}` : '#';
+  return `
+    <div class="addon-card">
+      <div class="addon-head">
+        <span class="addon-name">${addon.name}</span>
+        <span class="addon-price">${addon.priceLabel}</span>
+      </div>
+      <p class="addon-desc">${addon.description}</p>
+      <a class="addon-cta" href="${waHref}" target="_blank" rel="noopener">📱 اشترك في الخدمة</a>
+    </div>`;
+}
+
+function renderAddonsScreen() {
+  const addons = (appData.settings && appData.settings.addons) || {};
+  document.getElementById('addon-list').innerHTML = ADDONS_CATALOG.map((a) => addonCardHTML(a, !!addons[a.id])).join('');
+}
+
+document.getElementById('open-addons-screen').addEventListener('click', () => {
+  renderAddonsScreen();
+  document.getElementById('settings-modal-heading').style.display = 'none';
+  document.getElementById('settings-form').style.display = 'none';
+  document.getElementById('addons-screen').style.display = 'block';
+});
+document.getElementById('back-to-settings-form').addEventListener('click', () => {
+  document.getElementById('addons-screen').style.display = 'none';
+  document.getElementById('settings-modal-heading').style.display = 'block';
+  document.getElementById('settings-form').style.display = 'block';
 });
 
 // ====== حجزك السابق (بحث/تعديل/إلغاء برقم الموبايل بس، من غير كلمة سر العيادة) ======

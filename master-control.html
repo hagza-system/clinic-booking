@@ -102,6 +102,16 @@
   .due-date-edit.open { display: flex; }
   .due-date-edit input { flex: 1; height: 38px; }
   .due-date-edit button { height: 38px; padding: 0 12px; border-radius: 8px; border: none; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; background: #6366f1; color: #fff; white-space: nowrap; }
+  .addon-box { width: 100%; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #374151; }
+  .addon-box-title { font-size: 12.5px; font-weight: 700; color: #d1d5db; margin-bottom: 8px; }
+  .addon-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; }
+  .addon-row:not(:last-child) { border-bottom: 1px solid #1f2937; }
+  .addon-info { display: flex; flex-direction: column; gap: 2px; }
+  .addon-info .addon-name { font-size: 13px; font-weight: 600; color: #f3f4f6; }
+  .addon-info .addon-price { font-size: 11.5px; color: #9ca3af; }
+  .addon-toggle-btn { height: 32px; padding: 0 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .addon-toggle-btn.on { background: #16a34a; color: #fff; }
+  .addon-toggle-btn.off { background: #374151; color: #d1d5db; }
 </style>
 </head>
 <body>
@@ -169,6 +179,7 @@
 const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
 const baseUrl = 'https://hagza-system.github.io/clinic-booking/';
 let currentPin = '';
+let addonsCatalog = [];
 
 async function callApi(body) {
   const res = await fetch(API_URL, {
@@ -206,6 +217,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
 
     loginError.style.display = 'none';
     currentPin = pin;
+    addonsCatalog = result.addonsCatalog || [];
     document.getElementById('login-step').style.display = 'none';
     document.getElementById('control-step').style.display = 'block';
     renderClinics(result.clinics || []);
@@ -276,6 +288,19 @@ function renderClinics(clinics) {
     const row = document.createElement('div');
     row.className = 'clinic-row';
     const pay = paymentStatus(c.nextDueDate);
+    const addonRows = (addonsCatalog || []).map((a) => {
+      const active = !!(c.addons && c.addons[a.id]);
+      return `
+        <div class="addon-row">
+          <div class="addon-info">
+            <span class="addon-name">${a.name}</span>
+            <span class="addon-price">${a.priceLabel}</span>
+          </div>
+          <button class="addon-toggle-btn ${active ? 'on' : 'off'}" data-action="addon-toggle" data-addon-id="${a.id}" data-active="${active}">
+            ${active ? 'مفعّلة ✓' : 'غير مفعّلة'}
+          </button>
+        </div>`;
+    }).join('');
     row.innerHTML = `
       <div>
         <div class="clinic-name">${c.clinicName || c.clinicId}</div>
@@ -312,6 +337,10 @@ function renderClinics(clinics) {
           <button data-action="due-date-save">حفظ</button>
         </div>
         <p class="error-msg due-date-error"></p>
+      </div>
+      <div class="addon-box">
+        <div class="addon-box-title">🎁 الخدمات الإضافية</div>
+        ${addonRows || '<p class="empty-hint" style="padding:4px 0;">لا توجد خدمات إضافية متاحة حاليًا</p>'}
       </div>
       <div class="edit-box">
         <div class="field">
@@ -539,6 +568,21 @@ function renderClinics(clinics) {
     row.querySelector('[data-action="reset-cancel"]').addEventListener('click', () => {
       resetBox.classList.remove('open');
     });
+    row.querySelectorAll('[data-action="addon-toggle"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const addonId = btn.dataset.addonId;
+        const newActive = btn.dataset.active !== 'true';
+        btn.disabled = true;
+        const result = await callApi({ action: 'setClinicAddon', masterPin: currentPin, clinicId: c.clinicId, addonId, active: newActive });
+        btn.disabled = false;
+        if (result.success) {
+          refreshClinics();
+        } else {
+          alert(result.message || 'حصل خطأ');
+        }
+      });
+    });
+
     row.querySelector('[data-action="reset-confirm"]').addEventListener('click', async (e) => {
       const btn = e.currentTarget;
       const errorEl = row.querySelector('.reset-error');
@@ -565,7 +609,10 @@ function renderClinics(clinics) {
 
 async function refreshClinics() {
   const result = await callApi({ action: 'listClinics', masterPin: currentPin });
-  if (result.success) renderClinics(result.clinics || []);
+  if (result.success) {
+    addonsCatalog = result.addonsCatalog || addonsCatalog;
+    renderClinics(result.clinics || []);
+  }
 }
 
 document.getElementById('add-clinic-btn').addEventListener('click', async () => {
@@ -617,4 +664,3 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 </script>
 </body>
 </html>
-
