@@ -95,7 +95,11 @@
   .fu-status { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
   .fu-status.pending { background: rgba(234,179,8,0.15); color: #a16207; }
   .fu-status.confirmed { background: rgba(34,197,94,0.15); color: #15803d; }
-  .fu-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .fu-status.reschedule_requested { background: rgba(59,130,246,0.15); color: #1d4ed8; }
+  .fu-proposed { font-size: 12px; color: #1d4ed8; font-weight: 600; }
+  .fu-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .fu-reschedule-picker { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .fu-reschedule-picker select { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); font-size: 12.5px; }
   .fu-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 10px 0; }
 </style>
 </head>
@@ -143,7 +147,7 @@
     </div>
     <div class="field">
       <label>الوقت</label>
-      <input type="text" id="fu-time" placeholder="مثال: 5:00 م">
+      <select id="fu-time-select"></select>
     </div>
     <p class="error-msg" id="fu-add-error"></p>
     <button type="button" id="fu-add-btn" class="btn-primary" style="width:100%;">➕ إضافة موعد متابعة</button>
@@ -289,6 +293,7 @@ function renderDashboard() {
   document.getElementById('followup-section').style.display = followupActive ? 'block' : 'none';
   if (followupActive) {
     populateFollowupDaySelect();
+    populateFollowupTimeSelect();
     loadFollowupBookings();
   }
 }
@@ -736,13 +741,31 @@ async function doCancel(booking) {
 }
 
 // ====== مواعيد المتابعة (خدمة إضافية: followup) ======
-function populateFollowupDaySelect() {
-  const allowedDays = (settings.days || '').split(',').map(x => x.trim()).filter(Boolean);
-  const upcoming = getUpcomingDates(allowedDays, 60);
-  const select = document.getElementById('fu-day-select');
+function buildTimeSlots(startHour, endHour) {
+  const slots = [];
+  for (let h = startHour; h < endHour; h++) {
+    const period = h < 12 ? 'ص' : 'م';
+    let displayH = h % 12;
+    if (displayH === 0) displayH = 12;
+    slots.push(displayH + ':00 ' + period);
+  }
+  return slots;
+}
+
+function populateFollowupDaySelect(selectEl) {
+  // الأيام كلها متاحة هنا بغض النظر عن أيام عمل العيادة العادية
+  const upcoming = getUpcomingDates(ARABIC_DAY_NAMES, 60);
+  const select = selectEl || document.getElementById('fu-day-select');
   select.innerHTML = upcoming.length
     ? upcoming.map(d => `<option value="${formatDateKey(d)}">${formatDateLabel(d)}</option>`).join('')
     : '<option value="">مفيش أيام متاحة</option>';
+}
+
+function populateFollowupTimeSelect(selectEl) {
+  // كل الأوقات على مدار اليوم متاحة هنا بغض النظر عن مواعيد عمل العيادة العادية
+  const slots = buildTimeSlots(0, 24);
+  const select = selectEl || document.getElementById('fu-time-select');
+  select.innerHTML = slots.map((t) => `<option>${t}</option>`).join('');
 }
 
 async function loadFollowupBookings() {
@@ -768,25 +791,49 @@ function sendFollowupWhatsapp(booking) {
   window.open(`https://wa.me/${toWhatsappFormat(booking.phone)}?text=${msg}`, '_blank', 'noopener');
 }
 
+const FU_STATUS_LABELS = {
+  pending: '⏳ بانتظار التأكيد',
+  confirmed: '✅ مؤكد',
+  reschedule_requested: '🔄 المريض طلب ميعاد تاني',
+};
+
 function renderFollowupList() {
   const container = document.getElementById('fu-list');
   if (!followupBookings.length) {
     container.innerHTML = '<p class="fu-empty">لسه مفيش مواعيد متابعة مضافة</p>';
     return;
   }
-  container.innerHTML = followupBookings.map((b) => `
+  container.innerHTML = followupBookings.map((b) => {
+    const requestedLine = b.status === 'reschedule_requested'
+      ? `<span class="fu-proposed">🔄 المريض طلب ميعاد بديل — اختار له ميعاد جديد تحت</span>`
+      : '';
+    const actionsHtml = b.status === 'reschedule_requested'
+      ? `
+        <div class="fu-reschedule-picker">
+          <select class="fu-new-day-select" data-id="${b.id}"></select>
+          <select class="fu-new-time-select" data-id="${b.id}"></select>
+          <button type="button" class="icon-btn fu-update-btn" data-id="${b.id}">✅ حفظ وإرسال الميعاد الجديد</button>
+        </div>
+        <button type="button" class="icon-btn danger fu-cancel-btn" data-id="${b.id}">إلغاء</button>`
+      : `
+        <button type="button" class="icon-btn fu-send-btn" data-id="${b.id}">📱 ${b.status === 'confirmed' ? 'إرسال تذكير' : 'إرسال رابط التأكيد'}</button>
+        <button type="button" class="icon-btn danger fu-cancel-btn" data-id="${b.id}">إلغاء</button>`;
+    return `
     <div class="fu-row" data-id="${b.id}">
       <div class="fu-info">
         <b>${b.patientName}</b>
         <span dir="ltr">${b.phone}</span>
         <span>${b.day} — ${b.time}</span>
+        ${requestedLine}
       </div>
-      <span class="fu-status ${b.status}">${b.status === 'confirmed' ? '✅ مؤكد' : '⏳ بانتظار التأكيد'}</span>
-      <div class="fu-actions">
-        <button type="button" class="icon-btn fu-send-btn" data-id="${b.id}">📱 ${b.status === 'confirmed' ? 'إرسال تذكير' : 'إرسال رابط التأكيد'}</button>
-        <button type="button" class="icon-btn danger fu-cancel-btn" data-id="${b.id}">إلغاء</button>
-      </div>
-    </div>`).join('');
+      <span class="fu-status ${b.status}">${FU_STATUS_LABELS[b.status] || b.status}</span>
+      <div class="fu-actions">${actionsHtml}</div>
+    </div>`;
+  }).join('');
+
+  // تعبئة قوائم اليوم/الوقت الجديدة لكل موعد طالب إعادة جدولة (كل الأيام وكل الأوقات)
+  container.querySelectorAll('.fu-new-day-select').forEach((sel) => populateFollowupDaySelect(sel));
+  container.querySelectorAll('.fu-new-time-select').forEach((sel) => populateFollowupTimeSelect(sel));
 
   container.querySelectorAll('.fu-send-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -813,6 +860,32 @@ function renderFollowupList() {
       }
     });
   });
+  container.querySelectorAll('.fu-update-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const row = container.querySelector(`.fu-row[data-id="${id}"]`);
+      const daySelect = row.querySelector('.fu-new-day-select');
+      const timeSelect = row.querySelector('.fu-new-time-select');
+      const day = daySelect.options[daySelect.selectedIndex] ? daySelect.options[daySelect.selectedIndex].textContent : '';
+      const time = timeSelect.value;
+      if (!day || !time) { alert('اختار يوم ووقت'); return; }
+      btn.disabled = true;
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'updateFollowupBooking', clinicId: CLINIC_ID, pin: enteredPin, id, day, time })
+      });
+      const result = await res.json();
+      if (result.success) {
+        await loadFollowupBookings();
+        const updated = followupBookings.find((x) => String(x.id) === String(id));
+        if (updated) sendFollowupWhatsapp(updated);
+      } else {
+        alert(result.message || 'حصل خطأ');
+        btn.disabled = false;
+      }
+    });
+  });
 }
 
 document.getElementById('fu-add-btn').addEventListener('click', async () => {
@@ -821,11 +894,11 @@ document.getElementById('fu-add-btn').addEventListener('click', async () => {
   const patientName = document.getElementById('fu-patient-name').value.trim();
   const phone = document.getElementById('fu-phone').value.trim();
   const day = document.getElementById('fu-day-select').value;
-  const time = document.getElementById('fu-time').value.trim();
+  const time = document.getElementById('fu-time-select').value;
 
   if (!patientName) { errorEl.textContent = 'من فضلك اكتب اسم المريض'; errorEl.style.display = 'block'; return; }
   if (!/^01[0-9]{9}$/.test(phone)) { errorEl.textContent = 'رقم الموبايل غير صحيح'; errorEl.style.display = 'block'; return; }
-  if (!day || !time) { errorEl.textContent = 'من فضلك اختار اليوم واكتب الوقت'; errorEl.style.display = 'block'; return; }
+  if (!day || !time) { errorEl.textContent = 'من فضلك اختار اليوم والوقت'; errorEl.style.display = 'block'; return; }
 
   const btn = document.getElementById('fu-add-btn');
   btn.disabled = true;
@@ -846,7 +919,6 @@ document.getElementById('fu-add-btn').addEventListener('click', async () => {
     }
     document.getElementById('fu-patient-name').value = '';
     document.getElementById('fu-phone').value = '';
-    document.getElementById('fu-time').value = '';
     await loadFollowupBookings();
     sendFollowupWhatsapp({ id: result.id, patientName, phone, day, time });
   } catch (err) {

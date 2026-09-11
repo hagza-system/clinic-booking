@@ -13,6 +13,7 @@
     --primary: #185fa5; --primary-dark: #0c447c; --primary-tint: #eef4fa;
     --ink: #23262b; --muted: #767b85; --line: #e6e1d5; --bg: #f2eee5; --paper: #fffdf9;
     --good: #1f9d55; --good-tint: #eaf7ef; --bad: #b3392f; --bad-tint: #fbeceb;
+    --info: #1d4ed8; --info-tint: #eaf1fd;
   }
   body {
     font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
@@ -26,7 +27,7 @@
   .card h1 { font-family: 'El Messiri', sans-serif; font-size: 18px; margin-bottom: 6px; }
   .clinic-name { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
   .detail-box {
-    background: var(--bg); border-radius: 14px; padding: 16px; margin-bottom: 22px; text-align: right;
+    background: var(--bg); border-radius: 14px; padding: 16px; margin-bottom: 18px; text-align: right;
   }
   .detail-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; }
   .detail-row:not(:last-child) { border-bottom: 1px dashed var(--line); }
@@ -38,11 +39,22 @@
   }
   .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
   .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-link {
+    background: none; border: none; color: var(--primary); font-size: 12.5px; font-family: inherit;
+    cursor: pointer; text-decoration: underline; margin-top: 14px; padding: 0;
+  }
+  .field { margin-top: 16px; text-align: right; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .field select {
+    width: 100%; height: 44px; border-radius: 11px; border: 1.5px solid var(--line);
+    padding: 0 12px; font-size: 14px; font-family: inherit; background: #fff; color: var(--ink);
+  }
   .status-box {
     border-radius: 14px; padding: 18px 16px; font-size: 14px; font-weight: 700; line-height: 1.7;
   }
   .status-box.good { background: var(--good-tint); color: var(--good); }
   .status-box.bad { background: var(--bad-tint); color: var(--bad); }
+  .status-box.info { background: var(--info-tint); color: var(--info); }
   .loading { color: var(--muted); font-size: 13.5px; padding: 30px 0; }
   .footer-note { font-size: 11px; color: var(--muted); margin-top: 20px; }
 </style>
@@ -61,6 +73,17 @@ const BOOKING_ID = params.get('id') || '';
 
 const card = document.getElementById('card');
 
+// بيقبل رقم بأي صيغة (محلي 01xxxxxxxxx أو دولي 20xxxxxxxxxx بالفعل) ويرجعه بصيغة واتساب الدولية
+function toWhatsappNumber(raw) {
+  const digits = (raw || '').replace(/[^0-9]/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('0020')) return digits.slice(2);
+  if (digits.startsWith('20')) return digits;
+  if (digits.startsWith('0')) return '20' + digits.slice(1);
+  if (digits.length === 10) return '20' + digits;
+  return digits;
+}
+
 function renderError(message) {
   card.innerHTML = `
     <h1>تأكيد الموعد</h1>
@@ -68,25 +91,39 @@ function renderError(message) {
   `;
 }
 
-function renderPending(booking, clinicName) {
+function renderPending(booking, clinicInfo) {
   card.innerHTML = `
     <h1>تأكيد موعدك</h1>
-    <p class="clinic-name">${clinicName || 'العيادة'}</p>
+    <p class="clinic-name">${clinicInfo.clinicName || 'العيادة'}</p>
     <div class="detail-box">
       <div class="detail-row"><span>الاسم</span><b>${booking.patientName}</b></div>
       <div class="detail-row"><span>اليوم</span><b>${booking.day}</b></div>
       <div class="detail-row"><span>الوقت</span><b>${booking.time}</b></div>
     </div>
     <button type="button" class="btn-primary" id="confirm-btn">✅ تأكيد الموعد</button>
-    <p class="footer-note">لو الميعاد ده مش مناسب، تواصل مع العيادة مباشرة لتغييره.</p>
+    <button type="button" class="btn-link" id="reschedule-link">الميعاد ده مش مناسب؟ اطلب ميعاد تاني</button>
+    <p class="footer-note" id="footer-note">لو الميعاد ده مش مناسب، اضغط هنا وهيوصل طلبك للعيادة عشان تقترحلك ميعاد بديل.</p>
   `;
   document.getElementById('confirm-btn').addEventListener('click', doConfirm);
+  document.getElementById('reschedule-link').addEventListener('click', () => doRequestReschedule(clinicInfo));
 }
 
-function renderConfirmed(booking, clinicName) {
+function renderRescheduleRequested(booking, clinicInfo) {
   card.innerHTML = `
     <h1>تأكيد الموعد</h1>
-    <p class="clinic-name">${clinicName || 'العيادة'}</p>
+    <p class="clinic-name">${clinicInfo.clinicName || 'العيادة'}</p>
+    <div class="status-box info">
+      📤 تم إرسال طلبك للعيادة<br>
+      <span style="font-weight:400; font-size:13px;">هيتم التواصل معاك بميعاد جديد قريبًا</span>
+    </div>
+    <p class="footer-note">هتوصلك رسالة على واتساب فيها الميعاد الجديد لما العيادة تحدده.</p>
+  `;
+}
+
+function renderConfirmed(booking, clinicInfo) {
+  card.innerHTML = `
+    <h1>تأكيد الموعد</h1>
+    <p class="clinic-name">${clinicInfo.clinicName || 'العيادة'}</p>
     <div class="status-box good">
       ✅ تم تأكيد موعدك بنجاح<br>
       <span style="font-weight:400; font-size:13px;">${booking.day} — ${booking.time}</span>
@@ -95,7 +132,17 @@ function renderConfirmed(booking, clinicName) {
 }
 
 let currentBooking = null;
-let currentClinicName = '';
+let currentClinicInfo = {};
+
+function renderByStatus() {
+  if (currentBooking.status === 'confirmed') {
+    renderConfirmed(currentBooking, currentClinicInfo);
+  } else if (currentBooking.status === 'reschedule_requested') {
+    renderRescheduleRequested(currentBooking, currentClinicInfo);
+  } else {
+    renderPending(currentBooking, currentClinicInfo);
+  }
+}
 
 async function loadBooking() {
   if (!CLINIC_ID || !BOOKING_ID) {
@@ -114,12 +161,11 @@ async function loadBooking() {
       return;
     }
     currentBooking = result.booking;
-    currentClinicName = result.clinicName || '';
-    if (currentBooking.status === 'confirmed') {
-      renderConfirmed(currentBooking, currentClinicName);
-    } else {
-      renderPending(currentBooking, currentClinicName);
-    }
+    currentClinicInfo = {
+      clinicName: result.clinicName || '',
+      clinicWhatsapp: result.clinicWhatsapp || '',
+    };
+    renderByStatus();
   } catch (err) {
     renderError('حصل خطأ في الاتصال، من فضلك حاول تاني.');
   }
@@ -143,10 +189,40 @@ async function doConfirm() {
       return;
     }
     currentBooking.status = 'confirmed';
-    renderConfirmed(currentBooking, currentClinicName);
+    renderByStatus();
   } catch (err) {
     btn.disabled = false;
     btn.textContent = '✅ تأكيد الموعد';
+    alert('حصل خطأ في الاتصال، حاول تاني');
+  }
+}
+
+async function doRequestReschedule(clinicInfo) {
+  const link = document.getElementById('reschedule-link');
+  link.disabled = true;
+  link.textContent = 'جاري الإرسال...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'requestFollowupReschedule', clinicId: CLINIC_ID, id: BOOKING_ID })
+    });
+    const result = await res.json();
+    if (!result.success) {
+      link.disabled = false;
+      link.textContent = 'الميعاد ده مش مناسب؟ اطلب ميعاد تاني';
+      alert(result.message || 'حصل خطأ، حاول تاني');
+      return;
+    }
+    currentBooking.status = 'reschedule_requested';
+    if (clinicInfo.clinicWhatsapp) {
+      const msg = encodeURIComponent(`مرحباً، بخصوص موعد ${currentBooking.patientName} (${currentBooking.day} — ${currentBooking.time})، الميعاد ده مش مناسب. برجاء اقتراح ميعاد آخر.`);
+      window.open(`https://wa.me/${toWhatsappNumber(clinicInfo.clinicWhatsapp)}?text=${msg}`, '_blank', 'noopener');
+    }
+    renderByStatus();
+  } catch (err) {
+    link.disabled = false;
+    link.textContent = 'الميعاد ده مش مناسب؟ اطلب ميعاد تاني';
     alert('حصل خطأ في الاتصال، حاول تاني');
   }
 }
