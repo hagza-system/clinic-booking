@@ -91,6 +91,28 @@
   @keyframes chipPop { 0% { transform: scale(1); } 45% { transform: scale(1.07); } 100% { transform: scale(1); } }
   .chip:disabled { background: #f6f5f3; color: #c6c3bd; text-decoration: line-through; cursor: not-allowed; border-color: #efedea; transform: none; }
 
+  /* ===== إضافة عناصر كـ"تاجات" (خدمات / دكاترة) بدل الكتابة بفاصلة ===== */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .tag-item {
+    display: flex; align-items: center; gap: 7px; background: var(--primary-tint); border: 1.5px solid var(--primary-light);
+    border-radius: 10px; padding: 7px 6px 7px 12px; font-size: 13.5px; color: var(--primary-dark); font-weight: 500;
+  }
+  .tag-item .tag-remove {
+    background: none; border: none; cursor: pointer; color: var(--primary-dark); font-size: 14px; line-height: 1;
+    width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    opacity: .65; font-family: inherit; flex-shrink: 0;
+  }
+  .tag-item .tag-remove:hover { background: rgba(24,95,165,.15); opacity: 1; }
+  .tag-empty-hint { font-size: 12.5px; color: #b3b0a8; margin-bottom: 10px; }
+  .tag-input-row, .doctor-input-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag-input-row input, .doctor-input-row input { flex: 1; min-width: 110px; }
+  .tag-add-btn {
+    flex: 0 0 auto; height: 46px; padding: 0 18px; border-radius: 12px; border: 1.5px solid var(--primary);
+    background: #fff; color: var(--primary); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .tag-add-btn:hover { background: var(--primary); color: #fff; }
+
   input[type="tel"], input[type="text"], input[type="password"], input[type="number"], select, textarea {
     width: 100%; height: 46px; border-radius: 12px; border: 1.5px solid var(--line);
     padding: 0 14px; font-size: 15px; font-family: inherit; background: #fff; color: var(--ink);
@@ -427,13 +449,23 @@
         <div id="s-days-checkboxes" style="display:flex; flex-wrap:wrap; gap:8px 16px;"></div>
       </div>
       <div class="field">
-        <label>الخدمات (افصل بينهم بفاصلة)</label>
-        <textarea id="s-services"></textarea>
+        <label>الخدمات</label>
+        <div class="tag-list" id="s-services-tags"></div>
+        <div class="tag-input-row">
+          <input type="text" id="s-services-input" placeholder="اسم الخدمة، مثال: تنظيف أسنان">
+          <button type="button" class="tag-add-btn" id="s-services-add">➕ إضافة</button>
+        </div>
+        <p class="hint">اكتب اسم الخدمة واضغط "إضافة" أو Enter — كل خدمة تضيفها هتبان كتاج تحت، وتقدر تحذفها بضغطة على ✕</p>
       </div>
       <div class="field">
-        <label>الدكاترة (اختياري - كل دكتور في سطر بالشكل: الاسم:رقم واتساب)</label>
-        <textarea id="s-doctors" placeholder="د. منار:201044772311&#10;د. أحمد:201012345678"></textarea>
-        <p class="hint">لو العيادة فيها دكتور واحد بس، سيبيها فاضية. رقم الواتساب بعد النقطتين اختياري - لو مش موجود، هتوصل رسالة التأكيد لرقم العيادة العام بس</p>
+        <label>الدكاترة (اختياري)</label>
+        <div class="tag-list" id="s-doctors-tags"></div>
+        <div class="doctor-input-row">
+          <input type="text" id="s-doctor-name-input" placeholder="اسم الدكتور، مثال: د. منار">
+          <input type="tel" id="s-doctor-phone-input" placeholder="رقم واتساب (اختياري)">
+          <button type="button" class="tag-add-btn" id="s-doctors-add">➕ إضافة</button>
+        </div>
+        <p class="hint">لو العيادة فيها دكتور واحد بس، سيبها فاضية. رقم الواتساب اختياري - لو مش موجود، هتوصل رسالة التأكيد لرقم العيادة العام بس</p>
       </div>
       <div class="field">
         <label>من الساعة (بنظام 24 ساعة، مثال: 10)</label>
@@ -637,6 +669,84 @@ function parseDoctorLine(line) {
 function parseDoctors(doctorsSetting) {
   return (doctorsSetting || '').split('\n').map(line => line.trim()).filter(Boolean).map(parseDoctorLine);
 }
+
+// ====== إدارة الخدمات والدكاترة كـ"تاجات" بدل كتابتهم بفاصلة يدويًا ======
+let sServicesArr = [];
+let sDoctorsArr = []; // [{ name, whatsapp }]
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderServicesTags() {
+  const box = document.getElementById('s-services-tags');
+  if (!sServicesArr.length) {
+    box.innerHTML = '<p class="tag-empty-hint">لسه مفيش خدمات مضافة</p>';
+    return;
+  }
+  box.innerHTML = sServicesArr.map((name, i) =>
+    `<span class="tag-item">${escapeHtml(name)}<button type="button" class="tag-remove" data-i="${i}" aria-label="حذف الخدمة">✕</button></span>`
+  ).join('');
+}
+
+function addServiceFromInput() {
+  const input = document.getElementById('s-services-input');
+  const val = input.value.trim();
+  if (!val) return;
+  if (sServicesArr.some(s => s === val)) { input.value = ''; input.focus(); return; }
+  sServicesArr.push(val);
+  input.value = '';
+  renderServicesTags();
+  input.focus();
+}
+
+function renderDoctorsTags() {
+  const box = document.getElementById('s-doctors-tags');
+  if (!sDoctorsArr.length) {
+    box.innerHTML = '<p class="tag-empty-hint">لسه مفيش دكاترة مضافين (سيبها فاضية لو عيادتك فيها دكتور واحد بس)</p>';
+    return;
+  }
+  box.innerHTML = sDoctorsArr.map((d, i) =>
+    `<span class="tag-item">${escapeHtml(d.name)}${d.whatsapp ? ' — ' + escapeHtml(d.whatsapp) : ''}<button type="button" class="tag-remove" data-i="${i}" aria-label="حذف الدكتور">✕</button></span>`
+  ).join('');
+}
+
+function addDoctorFromInput() {
+  const nameInput = document.getElementById('s-doctor-name-input');
+  const phoneInput = document.getElementById('s-doctor-phone-input');
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  const whatsapp = phoneInput.value.replace(/[^0-9]/g, '');
+  sDoctorsArr.push({ name, whatsapp });
+  nameInput.value = '';
+  phoneInput.value = '';
+  renderDoctorsTags();
+  nameInput.focus();
+}
+
+document.getElementById('s-services-tags').addEventListener('click', (e) => {
+  const btn = e.target.closest('.tag-remove');
+  if (!btn) return;
+  sServicesArr.splice(Number(btn.dataset.i), 1);
+  renderServicesTags();
+});
+document.getElementById('s-services-add').addEventListener('click', addServiceFromInput);
+document.getElementById('s-services-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addServiceFromInput(); }
+});
+
+document.getElementById('s-doctors-tags').addEventListener('click', (e) => {
+  const btn = e.target.closest('.tag-remove');
+  if (!btn) return;
+  sDoctorsArr.splice(Number(btn.dataset.i), 1);
+  renderDoctorsTags();
+});
+document.getElementById('s-doctors-add').addEventListener('click', addDoctorFromInput);
+['s-doctor-name-input', 's-doctor-phone-input'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addDoctorFromInput(); }
+  });
+});
 
 const ARABIC_DAY_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const ARABIC_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -1165,8 +1275,10 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
       </label>`;
     }).join('');
 
-    document.getElementById('s-services').value = s.services || '';
-    document.getElementById('s-doctors').value = s.doctors || '';
+    sServicesArr = (s.services || '').split(',').map(x => x.trim()).filter(Boolean);
+    renderServicesTags();
+    sDoctorsArr = parseDoctors(s.doctors);
+    renderDoctorsTags();
     document.getElementById('s-startHour').value = s.startHour || 10;
     document.getElementById('s-endHour').value = s.endHour || 22;
     document.getElementById('s-maxPerSlot').value = s.maxPerSlot || 5;
@@ -1256,8 +1368,8 @@ document.getElementById('save-settings').addEventListener('click', async () => {
     clinicName: document.getElementById('s-clinicName').value.trim(),
     clinicSubtitle: document.getElementById('s-clinicSubtitle').value.trim(),
     days: Array.from(document.querySelectorAll('.s-day-cb:checked')).map(cb => cb.value).join(','),
-    services: document.getElementById('s-services').value.trim(),
-    doctors: document.getElementById('s-doctors').value.trim(),
+    services: sServicesArr.join(','),
+    doctors: sDoctorsArr.map(d => d.whatsapp ? `${d.name}:${d.whatsapp}` : d.name).join('\n'),
     startHour: document.getElementById('s-startHour').value,
     endHour: document.getElementById('s-endHour').value,
     maxPerSlot: document.getElementById('s-maxPerSlot').value,
