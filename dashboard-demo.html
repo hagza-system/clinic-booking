@@ -751,6 +751,7 @@ function buildTimeSlots(startHour, endHour) {
     let displayH = h % 12;
     if (displayH === 0) displayH = 12;
     slots.push(displayH + ':00 ' + period);
+    slots.push(displayH + ':30 ' + period);
   }
   return slots;
 }
