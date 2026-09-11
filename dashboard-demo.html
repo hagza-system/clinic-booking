@@ -295,6 +295,9 @@ function renderDashboard() {
     populateFollowupDaySelect();
     populateFollowupTimeSelect();
     loadFollowupBookings();
+    startFollowupAutoRefresh();
+  } else {
+    stopFollowupAutoRefresh();
   }
 }
 
@@ -779,6 +782,22 @@ async function loadFollowupBookings() {
     if (result.success) { followupBookings = result.bookings || []; renderFollowupList(); }
   } catch (err) { /* غير حرج */ }
 }
+
+// تحديث تلقائي لمواعيد المتابعة كل شوية، عشان لما المريض يطلب ميعاد تاني
+// الدكتور يشوف التحديث من غير ما يضطر يضغط "تحديث" يدوي كل مرة
+let followupPollTimer = null;
+function startFollowupAutoRefresh() {
+  if (followupPollTimer) return;
+  followupPollTimer = setInterval(() => {
+    if (document.visibilityState === 'visible') loadFollowupBookings();
+  }, 20000);
+}
+function stopFollowupAutoRefresh() {
+  if (followupPollTimer) { clearInterval(followupPollTimer); followupPollTimer = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && followupPollTimer) loadFollowupBookings();
+});
 
 function followupConfirmLink(id) {
   return `${baseUrl}confirm-followup.html?clinic=${encodeURIComponent(CLINIC_ID)}&id=${encodeURIComponent(id)}`;
