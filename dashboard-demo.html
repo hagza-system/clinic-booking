@@ -82,6 +82,21 @@
   .modal h2 { font-family: 'El Messiri', sans-serif; font-size: 17px; margin-bottom: 16px; }
   .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
   .modal-actions .btn-primary, .modal-actions .btn-secondary { flex: 1; }
+
+  /* ===== مواعيد المتابعة (خدمة إضافية) ===== */
+  .fu-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line);
+    margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .fu-row .fu-info { display: flex; flex-direction: column; gap: 3px; min-width: 160px; }
+  .fu-row .fu-info b { font-size: 13.5px; color: var(--ink); }
+  .fu-row .fu-info span { font-size: 12px; color: var(--muted); }
+  .fu-status { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .fu-status.pending { background: rgba(234,179,8,0.15); color: #a16207; }
+  .fu-status.confirmed { background: rgba(34,197,94,0.15); color: #15803d; }
+  .fu-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .fu-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 10px 0; }
 </style>
 </head>
 <body>
@@ -89,7 +104,7 @@
 <div id="pin-gate">
   <h1>حجزة <span style="font-weight:400;font-size:0.6em;">HAGZA</span></h1>
   <p style="margin-top:-8px;margin-bottom:10px;">لوحة تحكم الحجوزات</p>
-  <p>من فضلك اكتب نفس كلمة سر إعدادات العيادة</p>
+  <p>ادخلي بنفس كلمة سر إعدادات العيادة</p>
   <div class="field">
     <input type="password" id="pin-input" placeholder="كلمة السر">
   </div>
@@ -112,12 +127,35 @@
     <h3>الحجوزات حسب الخدمة</h3>
     <div id="service-chart"></div>
   </div>
+  <div class="chart-card" id="followup-section" style="display:none;">
+    <h3>🎁 مواعيد المتابعة</h3>
+    <div class="field">
+      <label>اسم المريض</label>
+      <input type="text" id="fu-patient-name" placeholder="اسم المريض">
+    </div>
+    <div class="field">
+      <label>رقم موبايل المريض</label>
+      <input type="tel" id="fu-phone" placeholder="01xxxxxxxxx" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>اليوم</label>
+      <select id="fu-day-select"></select>
+    </div>
+    <div class="field">
+      <label>الوقت</label>
+      <input type="text" id="fu-time" placeholder="مثال: 5:00 م">
+    </div>
+    <p class="error-msg" id="fu-add-error"></p>
+    <button type="button" id="fu-add-btn" class="btn-primary" style="width:100%;">➕ إضافة موعد متابعة</button>
+    <div id="fu-list" style="margin-top:18px;"></div>
+  </div>
+
   <div class="chart-card">
     <h3>حظر يوم معين (لظروف طارئة)</h3>
     <div class="field">
       <select id="block-date-select"></select>
     </div>
-    <button type="button" id="check-block-btn" class="btn-secondary" style="width:100%;">تحقق واحظر اليوم ده</button>
+    <button type="button" id="check-block-btn" class="btn-secondary" style="width:100%;">تحقق واحظري اليوم ده</button>
     <div id="block-warning" style="display:none; margin-top:12px;"></div>
     <div id="blocked-dates-list" style="margin-top:14px;"></div>
   </div>
@@ -145,12 +183,14 @@
 const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
 // معرّف العيادة بيتقرأ من رابط الصفحة (?clinic=xxx)، ولو مفيش بياخد demo-clinic افتراضياً
 const CLINIC_ID = new URLSearchParams(location.search).get('clinic') || "demo-clinic";
+const baseUrl = 'https://hagza-system.github.io/clinic-booking/';
 
 let settings = {};
 let bookings = [];
 let enteredPin = null;
 let blockedDates = [];
 let editingBooking = null;
+let followupBookings = [];
 
 function hexToRgb(hex) {
   hex = (hex || '#185fa5').replace('#', '');
@@ -174,13 +214,12 @@ function applyTheme(hex) {
 }
 
 function timeSortKey(t) {
-  const m = (t || '').match(/(\d+):(\d+) (ص|م)/);
+  const m = (t || '').match(/(\d+):00 (ص|م)/);
   if (!m) return 0;
   let h = parseInt(m[1], 10);
-  const mins = parseInt(m[2], 10) || 0;
-  if (m[3] === 'م' && h !== 12) h += 12;
-  if (m[3] === 'ص' && h === 12) h = 0;
-  return h * 60 + mins;
+  if (m[2] === 'م' && h !== 12) h += 12;
+  if (m[2] === 'ص' && h === 12) h = 0;
+  return h;
 }
 
 async function loadSettings() {
@@ -245,6 +284,13 @@ function renderDashboard() {
   populateBlockDateSelect();
   renderBlockedDatesList();
   document.getElementById('block-warning').style.display = 'none';
+
+  const followupActive = !!(settings.addons && settings.addons.followup);
+  document.getElementById('followup-section').style.display = followupActive ? 'block' : 'none';
+  if (followupActive) {
+    populateFollowupDaySelect();
+    loadFollowupBookings();
+  }
 }
 
 function isPastDay(dateStr) {
@@ -276,7 +322,7 @@ document.getElementById('check-block-btn').addEventListener('click', () => {
 
   let html = '';
   if (affected.length > 0) {
-    html += `<p style="color:#b3392f; font-weight:600; margin-bottom:10px; font-size:13.5px;">⚠️ فيه ${affected.length} حجز في اليوم ده - يفضل تبلغ العملاء الأول:</p>`;
+    html += `<p style="color:#b3392f; font-weight:600; margin-bottom:10px; font-size:13.5px;">⚠️ فيه ${affected.length} حجز في اليوم ده - يفضل تبلغي العملاء الأول:</p>`;
     affected.forEach(b => {
       const msg = encodeURIComponent(`مرحباً، للأسف محتاجين نأجل موعدك يوم ${dateKey} الساعة ${b.time} لظرف طارئ في العيادة. تقدر/ي تتواصل معانا نحدد ميعاد بديل يناسبك.`);
       html += `
@@ -286,7 +332,7 @@ document.getElementById('check-block-btn').addEventListener('click', () => {
         </div>`;
     });
   } else {
-    html += `<p style="color:var(--muted); font-size:13px; margin-bottom:10px;">مفيش حجوزات في اليوم ده - آمن تحظره.</p>`;
+    html += `<p style="color:var(--muted); font-size:13px; margin-bottom:10px;">مفيش حجوزات في اليوم ده - آمن تحظريه.</p>`;
   }
   html += `<button type="button" id="confirm-block-btn" class="btn-primary" style="width:100%; ${affected.length ? 'background:#b3392f;' : ''}">تأكيد حظر اليوم ده</button>`;
 
@@ -460,7 +506,7 @@ function renderPastList() {
       <span>سجل المواعيد اللي فاتت (بتتمسح تلقائي بعد أسبوعين)</span><span>${pastBookings.length} حجز</span>
     </summary>
     <div style="padding:10px 16px; border-top:1px solid var(--line);">
-      <button type="button" id="cleanup-now-btn" class="icon-btn danger" style="width:100%;" ${pastBookings.length === 0 ? 'disabled' : ''}>امسح المواعيد اللي فاتت دلوقتي</button>
+      <button type="button" id="cleanup-now-btn" class="icon-btn danger" style="width:100%;" ${pastBookings.length === 0 ? 'disabled' : ''}>امسحي المواعيد اللي فاتت دلوقتي</button>
     </div>`;
 
   if (pastBookings.length === 0) {
@@ -496,7 +542,7 @@ function renderPastList() {
 }
 
 async function doCleanupPastNow() {
-  if (!confirm('متأكد إنك عايز تمسح كل المواعيد اللي فاتت دلوقتي؟ الخطوة دي مينفعش ترجع فيها.')) return;
+  if (!confirm('متأكدة إنك عايزة تمسحي كل المواعيد اللي فاتت دلوقتي؟ الخطوة دي مينفعش ترجع فيها.')) return;
   const btn = document.getElementById('cleanup-now-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'جاري المسح...'; }
   try {
@@ -508,14 +554,14 @@ async function doCleanupPastNow() {
     const result = await res.json();
     if (!result.success) {
       alert(result.message || 'حصل خطأ، حاول تاني');
-      if (btn) { btn.disabled = false; btn.textContent = 'امسح المواعيد اللي فاتت دلوقتي'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'امسحي المواعيد اللي فاتت دلوقتي'; }
       return;
     }
     bookings = bookings.filter(b => !isPastDay(b.day));
     renderDashboard();
   } catch (err) {
     alert('حصل خطأ في الاتصال، حاول تاني');
-    if (btn) { btn.disabled = false; btn.textContent = 'امسح المواعيد اللي فاتت دلوقتي'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'امسحي المواعيد اللي فاتت دلوقتي'; }
   }
 }
 
@@ -657,10 +703,10 @@ function showNotifyBanner(booking, message) {
   const banner = document.getElementById('notify-banner');
   const waMsg = encodeURIComponent(message);
   banner.innerHTML = `
-    <p style="font-size:13.5px; margin-bottom:10px;">✅ اتحفظ التغيير - متنساش تبلغ العميل صاحب الرقم <b dir="ltr">${booking.phone}</b></p>
+    <p style="font-size:13.5px; margin-bottom:10px;">✅ اتحفظ التغيير - متنسيش تبلغي العميل صاحب الرقم <b dir="ltr">${booking.phone}</b></p>
     <a href="https://wa.me/${toWhatsappFormat(booking.phone)}?text=${waMsg}" target="_blank" rel="noopener"
        style="display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:10px; background:#25D366; color:#fff; text-decoration:none; font-size:13.5px; font-weight:600;">
-      📱 بلغ العميل على واتساب
+      📱 بلغي العميل على واتساب
     </a>
     <button type="button" id="dismiss-banner" style="background:none; border:none; color:var(--muted); font-size:12.5px; cursor:pointer; margin-right:10px; text-decoration:underline; font-family:inherit;">إخفاء</button>
   `;
@@ -669,7 +715,7 @@ function showNotifyBanner(booking, message) {
 }
 
 async function doCancel(booking) {
-  if (!confirm(`متأكد إنك عايز تلغي حجز الساعة ${booking.time} يوم ${booking.day}؟`)) return;
+  if (!confirm(`متأكدة إنك عايزة تلغي حجز الساعة ${booking.time} يوم ${booking.day}؟`)) return;
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -688,6 +734,128 @@ async function doCancel(booking) {
     alert('حصل خطأ في الاتصال، حاول تاني');
   }
 }
+
+// ====== مواعيد المتابعة (خدمة إضافية: followup) ======
+function populateFollowupDaySelect() {
+  const allowedDays = (settings.days || '').split(',').map(x => x.trim()).filter(Boolean);
+  const upcoming = getUpcomingDates(allowedDays, 60);
+  const select = document.getElementById('fu-day-select');
+  select.innerHTML = upcoming.length
+    ? upcoming.map(d => `<option value="${formatDateKey(d)}">${formatDateLabel(d)}</option>`).join('')
+    : '<option value="">مفيش أيام متاحة</option>';
+}
+
+async function loadFollowupBookings() {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'listFollowupBookings', clinicId: CLINIC_ID, pin: enteredPin })
+    });
+    const result = await res.json();
+    if (result.success) { followupBookings = result.bookings || []; renderFollowupList(); }
+  } catch (err) { /* غير حرج */ }
+}
+
+function followupConfirmLink(id) {
+  return `${baseUrl}confirm-followup.html?clinic=${encodeURIComponent(CLINIC_ID)}&id=${encodeURIComponent(id)}`;
+}
+
+function sendFollowupWhatsapp(booking) {
+  const clinicName = settings.clinicName || 'العيادة';
+  const link = followupConfirmLink(booking.id);
+  const msg = encodeURIComponent(`مرحباً، معادك الجاي في ${clinicName} يوم ${booking.day} الساعة ${booking.time}. من فضلك أكّد الموعد من الرابط ده: ${link}`);
+  window.open(`https://wa.me/${toWhatsappFormat(booking.phone)}?text=${msg}`, '_blank', 'noopener');
+}
+
+function renderFollowupList() {
+  const container = document.getElementById('fu-list');
+  if (!followupBookings.length) {
+    container.innerHTML = '<p class="fu-empty">لسه مفيش مواعيد متابعة مضافة</p>';
+    return;
+  }
+  container.innerHTML = followupBookings.map((b) => `
+    <div class="fu-row" data-id="${b.id}">
+      <div class="fu-info">
+        <b>${b.patientName}</b>
+        <span dir="ltr">${b.phone}</span>
+        <span>${b.day} — ${b.time}</span>
+      </div>
+      <span class="fu-status ${b.status}">${b.status === 'confirmed' ? '✅ مؤكد' : '⏳ بانتظار التأكيد'}</span>
+      <div class="fu-actions">
+        <button type="button" class="icon-btn fu-send-btn" data-id="${b.id}">📱 ${b.status === 'confirmed' ? 'إرسال تذكير' : 'إرسال رابط التأكيد'}</button>
+        <button type="button" class="icon-btn danger fu-cancel-btn" data-id="${b.id}">إلغاء</button>
+      </div>
+    </div>`).join('');
+
+  container.querySelectorAll('.fu-send-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const b = followupBookings.find((x) => String(x.id) === btn.dataset.id);
+      if (b) sendFollowupWhatsapp(b);
+    });
+  });
+  container.querySelectorAll('.fu-cancel-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('متأكدة إنك عايزة تلغي موعد المتابعة ده؟')) return;
+      btn.disabled = true;
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'cancelFollowupBooking', clinicId: CLINIC_ID, pin: enteredPin, id: btn.dataset.id })
+      });
+      const result = await res.json();
+      if (result.success) {
+        followupBookings = followupBookings.filter((x) => String(x.id) !== btn.dataset.id);
+        renderFollowupList();
+      } else {
+        alert(result.message || 'حصل خطأ');
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+document.getElementById('fu-add-btn').addEventListener('click', async () => {
+  const errorEl = document.getElementById('fu-add-error');
+  errorEl.style.display = 'none';
+  const patientName = document.getElementById('fu-patient-name').value.trim();
+  const phone = document.getElementById('fu-phone').value.trim();
+  const day = document.getElementById('fu-day-select').value;
+  const time = document.getElementById('fu-time').value.trim();
+
+  if (!patientName) { errorEl.textContent = 'من فضلك اكتب اسم المريض'; errorEl.style.display = 'block'; return; }
+  if (!/^01[0-9]{9}$/.test(phone)) { errorEl.textContent = 'رقم الموبايل غير صحيح'; errorEl.style.display = 'block'; return; }
+  if (!day || !time) { errorEl.textContent = 'من فضلك اختار اليوم واكتب الوقت'; errorEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('fu-add-btn');
+  btn.disabled = true;
+  btn.textContent = 'جاري الإضافة...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'createFollowupBooking', clinicId: CLINIC_ID, pin: enteredPin, patientName, phone, day, time })
+    });
+    const result = await res.json();
+    btn.disabled = false;
+    btn.textContent = '➕ إضافة موعد متابعة';
+    if (!result.success) {
+      errorEl.textContent = result.message || 'حصل خطأ، حاول تاني';
+      errorEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('fu-patient-name').value = '';
+    document.getElementById('fu-phone').value = '';
+    document.getElementById('fu-time').value = '';
+    await loadFollowupBookings();
+    sendFollowupWhatsapp({ id: result.id, patientName, phone, day, time });
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '➕ إضافة موعد متابعة';
+    errorEl.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    errorEl.style.display = 'block';
+  }
+});
 
 loadSettings();
 </script>

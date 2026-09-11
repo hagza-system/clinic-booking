@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تأكيد الموعد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #185fa5; --primary-dark: #0c447c; --primary-tint: #eef4fa;
+    --ink: #23262b; --muted: #767b85; --line: #e6e1d5; --bg: #f2eee5; --paper: #fffdf9;
+    --good: #1f9d55; --good-tint: #eaf7ef; --bad: #b3392f; --bad-tint: #fbeceb;
+  }
+  body {
+    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg); min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px; color: var(--ink);
+  }
+  .card {
+    background: var(--paper); border-radius: 20px; padding: 30px 26px; max-width: 400px; width: 100%;
+    box-shadow: 0 20px 44px rgba(35,25,10,.14); text-align: center;
+  }
+  .card h1 { font-family: 'El Messiri', sans-serif; font-size: 18px; margin-bottom: 6px; }
+  .clinic-name { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+  .detail-box {
+    background: var(--bg); border-radius: 14px; padding: 16px; margin-bottom: 22px; text-align: right;
+  }
+  .detail-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; }
+  .detail-row:not(:last-child) { border-bottom: 1px dashed var(--line); }
+  .detail-row span { color: var(--muted); }
+  .detail-row b { color: var(--ink); font-weight: 700; }
+  .btn-primary {
+    width: 100%; height: 48px; border-radius: 12px; border: none; background: var(--primary); color: #fff;
+    font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+  .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+  .status-box {
+    border-radius: 14px; padding: 18px 16px; font-size: 14px; font-weight: 700; line-height: 1.7;
+  }
+  .status-box.good { background: var(--good-tint); color: var(--good); }
+  .status-box.bad { background: var(--bad-tint); color: var(--bad); }
+  .loading { color: var(--muted); font-size: 13.5px; padding: 30px 0; }
+  .footer-note { font-size: 11px; color: var(--muted); margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="loading" id="loading-state">جاري تحميل بيانات الموعد...</div>
+</div>
+
+<script>
+const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
+const params = new URLSearchParams(location.search);
+const CLINIC_ID = params.get('clinic') || '';
+const BOOKING_ID = params.get('id') || '';
+
+const card = document.getElementById('card');
+
+function renderError(message) {
+  card.innerHTML = `
+    <h1>تأكيد الموعد</h1>
+    <div class="status-box bad">${message}</div>
+  `;
+}
+
+function renderPending(booking, clinicName) {
+  card.innerHTML = `
+    <h1>تأكيد موعدك</h1>
+    <p class="clinic-name">${clinicName || 'العيادة'}</p>
+    <div class="detail-box">
+      <div class="detail-row"><span>الاسم</span><b>${booking.patientName}</b></div>
+      <div class="detail-row"><span>اليوم</span><b>${booking.day}</b></div>
+      <div class="detail-row"><span>الوقت</span><b>${booking.time}</b></div>
+    </div>
+    <button type="button" class="btn-primary" id="confirm-btn">✅ تأكيد الموعد</button>
+    <p class="footer-note">لو الميعاد ده مش مناسب، تواصل مع العيادة مباشرة لتغييره.</p>
+  `;
+  document.getElementById('confirm-btn').addEventListener('click', doConfirm);
+}
+
+function renderConfirmed(booking, clinicName) {
+  card.innerHTML = `
+    <h1>تأكيد الموعد</h1>
+    <p class="clinic-name">${clinicName || 'العيادة'}</p>
+    <div class="status-box good">
+      ✅ تم تأكيد موعدك بنجاح<br>
+      <span style="font-weight:400; font-size:13px;">${booking.day} — ${booking.time}</span>
+    </div>
+  `;
+}
+
+let currentBooking = null;
+let currentClinicName = '';
+
+async function loadBooking() {
+  if (!CLINIC_ID || !BOOKING_ID) {
+    renderError('الرابط غير صحيح، من فضلك تواصل مع العيادة.');
+    return;
+  }
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getFollowupBooking', clinicId: CLINIC_ID, id: BOOKING_ID })
+    });
+    const result = await res.json();
+    if (!result.success) {
+      renderError(result.message || 'الموعد غير موجود، يمكن اتلغى أو الرابط غير صحيح.');
+      return;
+    }
+    currentBooking = result.booking;
+    currentClinicName = result.clinicName || '';
+    if (currentBooking.status === 'confirmed') {
+      renderConfirmed(currentBooking, currentClinicName);
+    } else {
+      renderPending(currentBooking, currentClinicName);
+    }
+  } catch (err) {
+    renderError('حصل خطأ في الاتصال، من فضلك حاول تاني.');
+  }
+}
+
+async function doConfirm() {
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true;
+  btn.textContent = 'جاري التأكيد...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'confirmFollowupBooking', clinicId: CLINIC_ID, id: BOOKING_ID })
+    });
+    const result = await res.json();
+    if (!result.success) {
+      btn.disabled = false;
+      btn.textContent = '✅ تأكيد الموعد';
+      alert(result.message || 'حصل خطأ، حاول تاني');
+      return;
+    }
+    currentBooking.status = 'confirmed';
+    renderConfirmed(currentBooking, currentClinicName);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '✅ تأكيد الموعد';
+    alert('حصل خطأ في الاتصال، حاول تاني');
+  }
+}
+
+loadBooking();
+</script>
+</body>
+</html>
