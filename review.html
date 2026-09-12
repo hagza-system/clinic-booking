@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تقييم الزيارة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #185fa5; --primary-dark: #0c447c; --primary-tint: #eef4fa;
+    --ink: #23262b; --muted: #767b85; --line: #e6e1d5; --bg: #f2eee5; --paper: #fffdf9;
+    --good: #1f9d55; --good-tint: #eaf7ef; --bad: #b3392f; --bad-tint: #fbeceb;
+    --info: #1d4ed8; --info-tint: #eaf1fd;
+  }
+  body {
+    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg); min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px; color: var(--ink);
+  }
+  .card {
+    background: var(--paper); border-radius: 20px; padding: 30px 26px; max-width: 400px; width: 100%;
+    box-shadow: 0 20px 44px rgba(35,25,10,.14); text-align: center;
+  }
+  .card h1 { font-family: 'El Messiri', sans-serif; font-size: 18px; margin-bottom: 6px; }
+  .clinic-name { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+  .detail-box {
+    background: var(--bg); border-radius: 14px; padding: 16px; margin-bottom: 18px; text-align: right;
+  }
+  .detail-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; }
+  .detail-row:not(:last-child) { border-bottom: 1px dashed var(--line); }
+  .detail-row span { color: var(--muted); }
+  .detail-row b { color: var(--ink); font-weight: 700; }
+  .stars { display: flex; justify-content: center; gap: 6px; font-size: 34px; margin: 8px 0 18px; direction: ltr; }
+  .stars .star { cursor: pointer; color: var(--line); transition: color .15s, transform .1s; user-select: none; }
+  .stars .star.filled { color: #f5a623; }
+  .stars .star:active { transform: scale(0.9); }
+  .rating-label { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; min-height: 16px; }
+  .field { margin-top: 4px; margin-bottom: 16px; text-align: right; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .field textarea {
+    width: 100%; border-radius: 11px; border: 1.5px solid var(--line); padding: 10px 12px;
+    font-size: 14px; font-family: inherit; background: #fff; color: var(--ink); resize: vertical;
+  }
+  .btn-primary {
+    width: 100%; height: 48px; border-radius: 12px; border: none; background: var(--primary); color: #fff;
+    font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+  .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+  .status-box {
+    border-radius: 14px; padding: 18px 16px; font-size: 14px; font-weight: 700; line-height: 1.7;
+  }
+  .status-box.good { background: var(--good-tint); color: var(--good); }
+  .status-box.bad { background: var(--bad-tint); color: var(--bad); }
+  .loading { color: var(--muted); font-size: 13.5px; padding: 30px 0; }
+  .footer-note { font-size: 11px; color: var(--muted); margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="loading" id="loading-state">جاري تحميل بيانات الزيارة...</div>
+</div>
+
+<script>
+const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
+const params = new URLSearchParams(location.search);
+const CLINIC_ID = params.get('clinic') || '';
+const BOOKING_ID = params.get('id') || '';
+
+const card = document.getElementById('card');
+let currentBooking = null;
+let currentClinicName = '';
+let selectedRating = 0;
+
+function renderError(message) {
+  card.innerHTML = `
+    <h1>تقييم الزيارة</h1>
+    <div class="status-box bad">${message}</div>
+  `;
+}
+
+function renderThankYou() {
+  card.innerHTML = `
+    <h1>شكراً لك 🙏</h1>
+    <p class="clinic-name">${currentClinicName || 'العيادة'}</p>
+    <div class="status-box good">
+      ✅ تم استلام تقييمك بنجاح<br>
+      <span style="font-weight:400; font-size:13px;">تقييمك بيساعدنا نطور من خدمتنا</span>
+    </div>
+  `;
+}
+
+const RATING_LABELS = { 1: 'مش راضي خالص', 2: 'مش راضي', 3: 'عادي', 4: 'كويس', 5: 'ممتاز' };
+
+function renderForm() {
+  card.innerHTML = `
+    <h1>قيّم زيارتك</h1>
+    <p class="clinic-name">${currentClinicName || 'العيادة'}</p>
+    <div class="detail-box">
+      <div class="detail-row"><span>الاسم</span><b>${currentBooking.patientName || ''}</b></div>
+      <div class="detail-row"><span>اليوم</span><b>${currentBooking.day}</b></div>
+      <div class="detail-row"><span>الوقت</span><b>${currentBooking.time}</b></div>
+    </div>
+    <div class="stars" id="stars">
+      ${[1,2,3,4,5].map((n) => `<span class="star" data-val="${n}">★</span>`).join('')}
+    </div>
+    <p class="rating-label" id="rating-label">اضغطي على النجوم عشان تقيّمي</p>
+    <div class="field">
+      <label>تعليق (اختياري)</label>
+      <textarea id="review-comment" rows="3" placeholder="اكتبي رأيك هنا..." maxlength="500"></textarea>
+    </div>
+    <p class="footer-note" id="submit-error" style="color:var(--bad); display:none;"></p>
+    <button type="button" class="btn-primary" id="submit-btn">إرسال التقييم</button>
+  `;
+  const starsEl = document.getElementById('stars');
+  const labelEl = document.getElementById('rating-label');
+  starsEl.querySelectorAll('.star').forEach((star) => {
+    star.addEventListener('click', () => {
+      selectedRating = parseInt(star.dataset.val, 10);
+      starsEl.querySelectorAll('.star').forEach((s) => {
+        s.classList.toggle('filled', parseInt(s.dataset.val, 10) <= selectedRating);
+      });
+      labelEl.textContent = RATING_LABELS[selectedRating] || '';
+    });
+  });
+  document.getElementById('submit-btn').addEventListener('click', doSubmit);
+}
+
+async function loadBooking() {
+  if (!CLINIC_ID || !BOOKING_ID) {
+    renderError('الرابط غير صحيح، من فضلك تواصل مع العيادة.');
+    return;
+  }
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getBookingForReview', clinicId: CLINIC_ID, id: BOOKING_ID })
+    });
+    const result = await res.json();
+    if (!result.success) {
+      renderError(result.message || 'الحجز غير موجود، يمكن الرابط غير صحيح.');
+      return;
+    }
+    currentBooking = result.booking;
+    currentClinicName = result.clinicName || '';
+    if (currentBooking.alreadyReviewed) {
+      renderThankYou();
+      return;
+    }
+    renderForm();
+  } catch (err) {
+    renderError('حصل خطأ في الاتصال، من فضلك حاول تاني.');
+  }
+}
+
+async function doSubmit() {
+  const errorEl = document.getElementById('submit-error');
+  errorEl.style.display = 'none';
+  if (!selectedRating) {
+    errorEl.textContent = 'من فضلك اختاري تقييم من ١ لـ ٥ نجوم';
+    errorEl.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('submit-btn');
+  const comment = document.getElementById('review-comment').value.trim();
+  btn.disabled = true;
+  btn.textContent = 'جاري الإرسال...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'submitReview', clinicId: CLINIC_ID, id: BOOKING_ID, rating: selectedRating, comment })
+    });
+    const result = await res.json();
+    if (!result.success) {
+      btn.disabled = false;
+      btn.textContent = 'إرسال التقييم';
+      errorEl.textContent = result.message || 'حصل خطأ، حاول تاني';
+      errorEl.style.display = 'block';
+      return;
+    }
+    renderThankYou();
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'إرسال التقييم';
+    errorEl.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    errorEl.style.display = 'block';
+  }
+}
+
+loadBooking();
+</script>
+</body>
+</html>

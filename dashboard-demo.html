@@ -101,6 +101,11 @@
   .fu-reschedule-picker { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .fu-reschedule-picker select { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); font-size: 12.5px; }
   .fu-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 10px 0; }
+  .sm-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .sm-tab-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-size: 12.5px; font-weight: 700; cursor: pointer; color: var(--muted); font-family: inherit; }
+  .sm-tab-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .sm-broadcast-text { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); font-family: inherit; font-size: 13.5px; resize: vertical; }
+  .sm-count-line { font-size: 12.5px; color: var(--muted); margin: 6px 0 14px; }
 </style>
 </head>
 <body>
@@ -154,6 +159,20 @@
     <div id="fu-list" style="margin-top:18px;"></div>
   </div>
 
+  <div class="chart-card" id="smart-messaging-section" style="display:none;">
+    <h3>📣 الرسائل الذكية</h3>
+    <div class="sm-tabs">
+      <button type="button" class="sm-tab-btn active" data-tab="reminders">تذكيرات بكرة</button>
+      <button type="button" class="sm-tab-btn" data-tab="reviews">طلبات تقييم</button>
+      <button type="button" class="sm-tab-btn" data-tab="broadcast">رسالة جماعية</button>
+      <button type="button" class="sm-tab-btn" data-tab="ratings">التقييمات اللي وصلت</button>
+    </div>
+    <div class="sm-tab-panel" id="sm-panel-reminders"></div>
+    <div class="sm-tab-panel" id="sm-panel-reviews" style="display:none;"></div>
+    <div class="sm-tab-panel" id="sm-panel-broadcast" style="display:none;"></div>
+    <div class="sm-tab-panel" id="sm-panel-ratings" style="display:none;"></div>
+  </div>
+
   <div class="chart-card">
     <h3>حظر يوم معين (لظروف طارئة)</h3>
     <div class="field">
@@ -195,6 +214,12 @@ let enteredPin = null;
 let blockedDates = [];
 let editingBooking = null;
 let followupBookings = [];
+let smReminders = [];
+let smReviewRequests = [];
+let smPatients = [];
+let smReviews = [];
+let smPatientsLoaded = false;
+let smReviewsLoaded = false;
 
 function hexToRgb(hex) {
   hex = (hex || '#185fa5').replace('#', '');
@@ -298,6 +323,13 @@ function renderDashboard() {
     startFollowupAutoRefresh();
   } else {
     stopFollowupAutoRefresh();
+  }
+
+  const smartMessagingActive = !!(settings.addons && settings.addons.smart_messaging);
+  document.getElementById('smart-messaging-section').style.display = smartMessagingActive ? 'block' : 'none';
+  if (smartMessagingActive) {
+    loadSmReminders();
+    loadSmReviewRequests();
   }
 }
 
@@ -948,6 +980,187 @@ document.getElementById('fu-add-btn').addEventListener('click', async () => {
     errorEl.style.display = 'block';
   }
 });
+
+// ================== الرسائل الذكية (خدمة إضافية: smart_messaging) ==================
+document.querySelectorAll('.sm-tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sm-tab-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.sm-tab-panel').forEach((p) => { p.style.display = 'none'; });
+    document.getElementById('sm-panel-' + btn.dataset.tab).style.display = 'block';
+    if (btn.dataset.tab === 'broadcast' && !smPatientsLoaded) loadSmPatients();
+    if (btn.dataset.tab === 'ratings' && !smReviewsLoaded) loadSmReviews();
+  });
+});
+
+function reviewLink(id) {
+  return `${baseUrl}review.html?clinic=${encodeURIComponent(CLINIC_ID)}&id=${encodeURIComponent(id)}`;
+}
+
+async function loadSmReminders() {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getDueReminders', clinicId: CLINIC_ID, pin: enteredPin })
+    });
+    const result = await res.json();
+    if (result.success) { smReminders = result.reminders || []; renderSmReminders(); }
+  } catch (err) { /* غير حرج */ }
+}
+
+function renderSmReminders() {
+  const el = document.getElementById('sm-panel-reminders');
+  if (!smReminders.length) { el.innerHTML = '<p class="fu-empty">مفيش تذكيرات مستحقة دلوقتي</p>'; return; }
+  el.innerHTML = smReminders.map((b) => {
+    const clinicName = settings.clinicName || 'العيادة';
+    const msg = encodeURIComponent(`مرحباً ${b.patientName}، تذكير بمعادك بكرة في ${clinicName} الساعة ${b.time}. في انتظارك! 🌸`);
+    const link = `https://wa.me/${toWhatsappFormat(b.phone)}?text=${msg}`;
+    return `
+    <div class="fu-row" data-id="${b.id}">
+      <div class="fu-info">
+        <b>${b.patientName || 'بدون اسم'}</b>
+        <span dir="ltr">${b.phone}</span>
+        <span>${b.day} — ${b.time}${b.service ? ' — ' + b.service : ''}</span>
+      </div>
+      <div class="fu-actions">
+        <a class="icon-btn sm-reminder-send" data-id="${b.id}" href="${link}" target="_blank" rel="noopener">📱 إرسال التذكير</a>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.sm-reminder-send').forEach((a) => {
+    a.addEventListener('click', async () => {
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'markReminderSent', clinicId: CLINIC_ID, pin: enteredPin, id: a.dataset.id })
+        });
+      } catch (err) { /* غير حرج */ }
+      smReminders = smReminders.filter((x) => String(x.id) !== a.dataset.id);
+      renderSmReminders();
+    });
+  });
+}
+
+async function loadSmReviewRequests() {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getDueReviewRequests', clinicId: CLINIC_ID, pin: enteredPin })
+    });
+    const result = await res.json();
+    if (result.success) { smReviewRequests = result.requests || []; renderSmReviewRequests(); }
+  } catch (err) { /* غير حرج */ }
+}
+
+function renderSmReviewRequests() {
+  const el = document.getElementById('sm-panel-reviews');
+  if (!smReviewRequests.length) { el.innerHTML = '<p class="fu-empty">مفيش طلبات تقييم مستحقة دلوقتي</p>'; return; }
+  el.innerHTML = smReviewRequests.map((b) => {
+    const clinicName = settings.clinicName || 'العيادة';
+    const link = reviewLink(b.id);
+    const msg = encodeURIComponent(`مرحباً ${b.patientName}، تشرفنا بزيارتك في ${clinicName}. نتمنى تقييم تجربتك معنا من الرابط ده: ${link} 🙏`);
+    const waLink = `https://wa.me/${toWhatsappFormat(b.phone)}?text=${msg}`;
+    return `
+    <div class="fu-row" data-id="${b.id}">
+      <div class="fu-info">
+        <b>${b.patientName || 'بدون اسم'}</b>
+        <span dir="ltr">${b.phone}</span>
+        <span>${b.day} — ${b.time}</span>
+      </div>
+      <div class="fu-actions">
+        <a class="icon-btn sm-review-send" data-id="${b.id}" href="${waLink}" target="_blank" rel="noopener">📱 طلب تقييم</a>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.sm-review-send').forEach((a) => {
+    a.addEventListener('click', async () => {
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'markReviewRequested', clinicId: CLINIC_ID, pin: enteredPin, id: a.dataset.id })
+        });
+      } catch (err) { /* غير حرج */ }
+      smReviewRequests = smReviewRequests.filter((x) => String(x.id) !== a.dataset.id);
+      renderSmReviewRequests();
+    });
+  });
+}
+
+async function loadSmPatients() {
+  smPatientsLoaded = true;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getPatientsForBroadcast', clinicId: CLINIC_ID, pin: enteredPin })
+    });
+    const result = await res.json();
+    if (result.success) { smPatients = result.patients || []; }
+  } catch (err) { /* غير حرج */ }
+  renderSmBroadcast();
+}
+
+function renderSmBroadcast() {
+  const el = document.getElementById('sm-panel-broadcast');
+  el.innerHTML = `
+    <div class="field">
+      <label>نص الرسالة (هيتفتح واتساب بنفس النص لكل مريض تضغطي عليه)</label>
+      <textarea id="sm-broadcast-text" class="sm-broadcast-text" rows="3" placeholder="اكتبي رسالتك هنا..."></textarea>
+    </div>
+    <p class="sm-count-line">عدد المرضى المسجلين: ${smPatients.length}</p>
+    <div id="sm-broadcast-list"></div>`;
+  const listEl = document.getElementById('sm-broadcast-list');
+  if (!smPatients.length) { listEl.innerHTML = '<p class="fu-empty">لسه مفيش مرضى مسجلين</p>'; return; }
+  listEl.innerHTML = smPatients.map((p) => `
+    <div class="fu-row">
+      <div class="fu-info">
+        <b>${p.patientName || 'بدون اسم'}</b>
+        <span dir="ltr">${p.phone}</span>
+      </div>
+      <div class="fu-actions">
+        <button type="button" class="icon-btn sm-broadcast-send" data-phone="${p.phone}">📱 إرسال</button>
+      </div>
+    </div>`).join('');
+  listEl.querySelectorAll('.sm-broadcast-send').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const text = document.getElementById('sm-broadcast-text').value.trim();
+      if (!text) { alert('من فضلك اكتبي نص الرسالة الأول'); return; }
+      window.open(`https://wa.me/${toWhatsappFormat(btn.dataset.phone)}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+    });
+  });
+}
+
+async function loadSmReviews() {
+  smReviewsLoaded = true;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getReviews', clinicId: CLINIC_ID, pin: enteredPin })
+    });
+    const result = await res.json();
+    if (result.success) { smReviews = result.reviews || []; }
+  } catch (err) { /* غير حرج */ }
+  renderSmReviews();
+}
+
+function renderSmReviews() {
+  const el = document.getElementById('sm-panel-ratings');
+  if (!smReviews.length) { el.innerHTML = '<p class="fu-empty">لسه مفيش تقييمات وصلت</p>'; return; }
+  el.innerHTML = smReviews.map((r) => `
+    <div class="fu-row">
+      <div class="fu-info">
+        <b>${r.patientName || 'مريض'}</b>
+        <span>${r.day}</span>
+        ${r.comment ? `<span>${r.comment}</span>` : ''}
+      </div>
+      <span class="fu-status confirmed">${'⭐'.repeat(r.rating)}</span>
+    </div>`).join('');
+}
 
 loadSettings();
 </script>
