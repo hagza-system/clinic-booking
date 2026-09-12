@@ -463,17 +463,30 @@
         <div class="doctor-input-row">
           <input type="text" id="s-doctor-name-input" placeholder="اسم الدكتور، مثال: د. منار">
           <input type="tel" id="s-doctor-phone-input" placeholder="رقم واتساب (اختياري)">
+          <button type="button" class="tag-add-btn" id="s-doctor-phone-pick" style="display:none; flex:0 0 auto; padding:0 14px;" title="اختيار من جهات الاتصال">📇</button>
           <button type="button" class="tag-add-btn" id="s-doctors-add">➕ إضافة</button>
         </div>
-        <p class="hint">لو العيادة فيها دكتور واحد بس، سيبها فاضية. رقم الواتساب اختياري - لو مش موجود، هتوصل رسالة التأكيد لرقم العيادة العام بس</p>
+        <p class="hint">لو العيادة فيها دكتور واحد بس، سيبها فاضية. رقم الواتساب اختياري - لو مش موجود، هتوصل رسالة التأكيد لرقم العيادة العام بس. تقدر تدوس على 📇 عشان تختار رقم الدكتور من جهات الاتصال بموبايلك بدل ما تكتبه</p>
       </div>
       <div class="field">
-        <label>من الساعة (بنظام 24 ساعة، مثال: 10)</label>
-        <input type="number" id="s-startHour" min="0" max="23">
+        <label>من الساعة</label>
+        <div class="doctor-input-row">
+          <select id="s-startHour12"></select>
+          <select id="s-startAmPm">
+            <option value="am">صباحاً</option>
+            <option value="pm">مساءً</option>
+          </select>
+        </div>
       </div>
       <div class="field">
-        <label>لحد الساعة (بنظام 24 ساعة، مثال: 22)</label>
-        <input type="number" id="s-endHour" min="1" max="24">
+        <label>لحد الساعة</label>
+        <div class="doctor-input-row">
+          <select id="s-endHour12"></select>
+          <select id="s-endAmPm">
+            <option value="am">صباحاً</option>
+            <option value="pm">مساءً</option>
+          </select>
+        </div>
       </div>
       <div class="field">
         <label>أقصى عدد حجوزات لكل موعد</label>
@@ -642,11 +655,59 @@ function applyTheme(hex) {
   root.setProperty('--primary-light', mixTowards(hex, white, 0.75));
   root.setProperty('--primary-tint', mixTowards(hex, white, 0.93));
 }
+// ====== يحوّل الأرقام العربية/الفارسية (٠١٢٣...) لأرقام إنجليزية، عشان النظام يقبل الاتنين ======
+function normalizeDigits(str) {
+  if (!str) return str;
+  return String(str).replace(/[٠-٩۰-۹]/g, (d) => {
+    const code = d.charCodeAt(0);
+    if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660);
+    if (code >= 0x06F0 && code <= 0x06F9) return String(code - 0x06F0);
+    return d;
+  });
+}
+// بيخلي أي حقل إدخال يحوّل الأرقام العربية لإنجليزية أول ما المستخدم يكتبها، من غير ما يحس
+function attachDigitNormalizer(el) {
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const normalized = normalizeDigits(el.value);
+    if (normalized !== el.value) {
+      const pos = el.selectionStart;
+      el.value = normalized;
+      try { el.setSelectionRange(pos, pos); } catch (e) {}
+    }
+  });
+}
+
+// ====== تحويل ساعات العمل بين نظام 24 ساعة (المخزّن) ونظام 12 ساعة + صباحاً/مساءً (اللي بيظهر في الإعدادات) ======
+function hour24to12(h24) {
+  const hh = ((Number(h24) % 24) + 24) % 24; // 24 بتترجع لـ 0 (منتصف الليل)
+  const ampm = hh < 12 ? 'am' : 'pm';
+  let h12 = hh % 12;
+  if (h12 === 0) h12 = 12;
+  return { h12, ampm };
+}
+function hour12to24(h12, ampm, isEndBoundary) {
+  let hh = Number(h12) % 12;
+  if (ampm === 'pm') hh += 12;
+  if (isEndBoundary && hh === 0) hh = 24; // "12 صباحاً" كنهاية يوم = الساعة 24
+  return hh;
+}
+function populateHour12Select(sel) {
+  sel.innerHTML = Array.from({ length: 12 }, (_, i) => i + 1)
+    .map(h => `<option value="${h}">${h}</option>`).join('');
+}
+populateHour12Select(document.getElementById('s-startHour12'));
+populateHour12Select(document.getElementById('s-endHour12'));
+
+// تحويل الأرقام العربية لإنجليزية تلقائيًا في كل حقول الأرقام/التليفونات
+['phone', 'mb-phone', 's-doctor-phone-input', 's-clinicWhatsapp'].forEach(id => {
+  attachDigitNormalizer(document.getElementById(id));
+});
 
 // بيوحّد رقم الواتساب لصيغة wa.me الدولية، حتى لو العيادة كتبته بالصيغة المحلية العادية (بصفر في الأول)
 // أو بالصيغة الدولية الصح (بـ20) - النتيجة دايماً هتكون شغالة مع wa.me
 function toWhatsappNumber(raw) {
-  const digits = (raw || '').replace(/[^0-9]/g, '');
+  const digits = normalizeDigits(raw || '').replace(/[^0-9]/g, '');
   if (!digits) return '';
   if (digits.startsWith('0020')) return digits.slice(2);
   if (digits.startsWith('20')) return digits;
@@ -664,7 +725,7 @@ function parseDoctorLine(line) {
     if (m) sep = m.index;
   }
   if (sep === -1) return { name: line.trim(), whatsapp: '' };
-  return { name: line.slice(0, sep).trim(), whatsapp: line.slice(sep + 1).replace(/[^0-9]/g, '') };
+  return { name: line.slice(0, sep).trim(), whatsapp: normalizeDigits(line.slice(sep + 1)).replace(/[^0-9]/g, '') };
 }
 function parseDoctors(doctorsSetting) {
   return (doctorsSetting || '').split('\n').map(line => line.trim()).filter(Boolean).map(parseDoctorLine);
@@ -716,12 +777,33 @@ function addDoctorFromInput() {
   const phoneInput = document.getElementById('s-doctor-phone-input');
   const name = nameInput.value.trim();
   if (!name) { nameInput.focus(); return; }
-  const whatsapp = phoneInput.value.replace(/[^0-9]/g, '');
+  const whatsapp = normalizeDigits(phoneInput.value).replace(/[^0-9]/g, '');
   sDoctorsArr.push({ name, whatsapp });
   nameInput.value = '';
   phoneInput.value = '';
   renderDoctorsTags();
   nameInput.focus();
+}
+
+// ====== اختيار رقم الدكتور من جهات اتصال الموبايل (بدل ما يتكتب يدوي) ======
+// الميزة دي مدعومة بس على أندرويد كروم؛ لو المتصفح مش داعمها الزرار هيفضل مخفي
+const sDoctorPhonePickBtn = document.getElementById('s-doctor-phone-pick');
+if ('contacts' in navigator && 'ContactsManager' in window) {
+  sDoctorPhonePickBtn.style.display = 'inline-flex';
+  sDoctorPhonePickBtn.addEventListener('click', async () => {
+    try {
+      const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+      if (contacts && contacts[0]) {
+        const c = contacts[0];
+        const nameInput = document.getElementById('s-doctor-name-input');
+        const phoneInput = document.getElementById('s-doctor-phone-input');
+        if (c.name && c.name[0] && !nameInput.value.trim()) nameInput.value = c.name[0];
+        if (c.tel && c.tel[0]) phoneInput.value = normalizeDigits(c.tel[0]).replace(/[^0-9]/g, '');
+      }
+    } catch (err) {
+      // المستخدم لغى الاختيار — مفيش داعي لأي رسالة خطأ
+    }
+  });
 }
 
 document.getElementById('s-services-tags').addEventListener('click', (e) => {
@@ -1279,8 +1361,12 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     renderServicesTags();
     sDoctorsArr = parseDoctors(s.doctors);
     renderDoctorsTags();
-    document.getElementById('s-startHour').value = s.startHour || 10;
-    document.getElementById('s-endHour').value = s.endHour || 22;
+    const startH12 = hour24to12(s.startHour || 10);
+    document.getElementById('s-startHour12').value = startH12.h12;
+    document.getElementById('s-startAmPm').value = startH12.ampm;
+    const endH12 = hour24to12(s.endHour || 22);
+    document.getElementById('s-endHour12').value = endH12.h12;
+    document.getElementById('s-endAmPm').value = endH12.ampm;
     document.getElementById('s-maxPerSlot').value = s.maxPerSlot || 5;
     document.getElementById('s-slotMinutes').value = (parseInt(s.slotMinutes, 10) === 30) ? '30' : '60';
     document.getElementById('s-primaryColor').value = s.primaryColor || '#185fa5';
@@ -1370,8 +1456,8 @@ document.getElementById('save-settings').addEventListener('click', async () => {
     days: Array.from(document.querySelectorAll('.s-day-cb:checked')).map(cb => cb.value).join(','),
     services: sServicesArr.join(','),
     doctors: sDoctorsArr.map(d => d.whatsapp ? `${d.name}:${d.whatsapp}` : d.name).join('\n'),
-    startHour: document.getElementById('s-startHour').value,
-    endHour: document.getElementById('s-endHour').value,
+    startHour: hour12to24(document.getElementById('s-startHour12').value, document.getElementById('s-startAmPm').value, false),
+    endHour: hour12to24(document.getElementById('s-endHour12').value, document.getElementById('s-endAmPm').value, true),
     maxPerSlot: document.getElementById('s-maxPerSlot').value,
     slotMinutes: document.getElementById('s-slotMinutes').value,
     primaryColor: document.getElementById('s-primaryColor').value,
