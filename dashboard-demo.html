@@ -135,6 +135,7 @@
     <button id="refresh-btn">تحديث 🔄</button>
   </div>
   <div id="notify-banner" class="notify-toast" style="display:none; background:#fff; border:1.5px solid #25D366; border-radius:14px; padding:12px 16px;"></div>
+  <div id="branch-filter-row" style="display:none; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
   <div class="stats-row" id="stats-row"></div>
   <div class="chart-card">
     <h3>الحجوزات حسب اليوم</h3>
@@ -218,6 +219,9 @@ const baseUrl = 'https://hagza-system.github.io/clinic-booking/';
 
 let settings = {};
 let bookings = [];
+let allBookingsFull = []; // كل الحجوزات من غير فلترة فرع - المصدر الأساسي، bookings بتتفلتر منه
+let allBranches = []; // فروع العيادة (لو مفعّلة عندها خدمة الفروع المتعددة)
+let currentBranchFilter = null; // null = عرض كل الفروع مع بعض
 let enteredPin = null;
 let blockedDates = [];
 let editingBooking = null;
@@ -264,9 +268,39 @@ async function loadSettings() {
     const res = await fetch(API_URL + '?action=getPublicData&clinicId=' + encodeURIComponent(CLINIC_ID));
     const data = await res.json();
     settings = data.settings || {};
+    allBranches = (settings.addons && settings.addons.multi_branch && Array.isArray(settings.branches)) ? settings.branches : [];
     applyTheme(settings.primaryColor || '#185fa5');
     document.getElementById('dash-subtitle').textContent = settings.clinicName || 'العيادة';
   } catch (err) { /* الإعدادات مش أساسية لفتح صفحة الدخول */ }
+}
+
+function renderBranchFilterRow() {
+  const row = document.getElementById('branch-filter-row');
+  if (!allBranches.length) {
+    row.style.display = 'none';
+    row.innerHTML = '';
+    return;
+  }
+  row.style.display = 'flex';
+  row.innerHTML = '';
+  const tabs = [{ id: null, name: 'الكل' }].concat(allBranches.map((b) => ({ id: b.id, name: b.name })));
+  tabs.forEach((t) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sm-tab-btn branch-filter-btn' + (currentBranchFilter === t.id ? ' active' : '');
+    btn.textContent = t.name;
+    btn.addEventListener('click', () => {
+      currentBranchFilter = t.id;
+      renderBranchFilterRow();
+      applyBranchFilterAndRender();
+    });
+    row.appendChild(btn);
+  });
+}
+
+function applyBranchFilterAndRender() {
+  bookings = currentBranchFilter ? allBookingsFull.filter((b) => b.branchId === currentBranchFilter) : allBookingsFull;
+  renderDashboard();
 }
 
 document.getElementById('submit-pin').addEventListener('click', async () => {
@@ -288,10 +322,11 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
       return;
     }
     enteredPin = pin;
-    bookings = result.bookings;
+    allBookingsFull = result.bookings;
     document.getElementById('pin-gate').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    renderDashboard();
+    renderBranchFilterRow();
+    applyBranchFilterAndRender();
   } catch (err) {
     btn.disabled = false;
     pinError.textContent = 'حصل خطأ في الاتصال، حاول تاني';
@@ -310,7 +345,7 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
     body: JSON.stringify({ action: 'getFullBookings', clinicId: CLINIC_ID, pin: enteredPin })
   });
   const result = await res.json();
-  if (result.success) { bookings = result.bookings; renderDashboard(); }
+  if (result.success) { allBookingsFull = result.bookings; renderBranchFilterRow(); applyBranchFilterAndRender(); }
 });
 
 function renderDashboard() {
@@ -605,8 +640,8 @@ async function doCleanupPastNow() {
       if (btn) { btn.disabled = false; btn.textContent = 'امسحي المواعيد اللي فاتت دلوقتي'; }
       return;
     }
-    bookings = bookings.filter(b => !isPastDay(b.day));
-    renderDashboard();
+    allBookingsFull = allBookingsFull.filter(b => !isPastDay(b.day));
+    applyBranchFilterAndRender();
   } catch (err) {
     alert('حصل خطأ في الاتصال، حاول تاني');
     if (btn) { btn.disabled = false; btn.textContent = 'امسحي المواعيد اللي فاتت دلوقتي'; }
@@ -775,8 +810,8 @@ async function doCancel(booking) {
       alert(result.message || 'حصل خطأ، حاول تاني');
       return;
     }
-    bookings = bookings.filter(b => b !== booking);
-    renderDashboard();
+    allBookingsFull = allBookingsFull.filter(b => b !== booking);
+    applyBranchFilterAndRender();
     showNotifyBanner(booking, `مرحباً، للأسف تم إلغاء حجزك يوم ${booking.day} الساعة ${booking.time}. تقدر/ي تتواصل معانا نحدد ميعاد بديل يناسبك.`);
   } catch (err) {
     alert('حصل خطأ في الاتصال، حاول تاني');

@@ -277,6 +277,28 @@
   .addon-active-note { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
   .addon-list-footnote { font-size: 11.5px; color: var(--muted); text-align: center; margin-top: 16px; line-height: 1.6; }
 
+  /* ===== اختيار الفرع (عيادات الفروع المتعددة) ===== */
+  .branch-list { display: flex; flex-direction: column; gap: 12px; }
+  .branch-card {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    border-radius: 14px; padding: 16px; border: 1.5px solid var(--line); background: var(--bg);
+    cursor: pointer; text-align: right; width: 100%; font-family: inherit; transition: border-color .15s, background .15s;
+  }
+  .branch-card:hover { border-color: var(--primary); background: var(--primary-tint); }
+  .branch-card-info { display: flex; flex-direction: column; gap: 4px; }
+  .branch-card-name { font-family: 'El Messiri', sans-serif; font-size: 15px; font-weight: 700; color: var(--ink); }
+  .branch-card-address { font-size: 12.5px; color: var(--muted); }
+  .branch-card-arrow { font-size: 18px; color: var(--primary); flex-shrink: 0; }
+  .branch-current-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--primary-tint); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px;
+  }
+  .branch-current-bar b { color: var(--primary-dark); }
+  .branch-switch-btn {
+    background: none; border: none; color: var(--primary-dark); font-size: 12.5px; font-weight: 700;
+    text-decoration: underline; cursor: pointer; font-family: inherit;
+  }
+
   /* ===== حجوزاتي السابقة ===== */
   .mybooking-card { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
   .mybooking-card .mb-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
@@ -346,7 +368,16 @@
       <p id="vacation-note-text">هنرجع نستقبل حجوزات جديدة قريباً</p>
     </div>
 
+    <div id="branch-select-ui" style="display:none;">
+      <p class="step-title">اختار الفرع اللي تحبي تحجزي فيه</p>
+      <div class="branch-list" id="branch-list"></div>
+    </div>
+
     <div id="booking-ui" style="display:none;">
+      <div class="branch-current-bar" id="branch-current-bar" style="display:none;">
+        <span>📍 الفرع: <b id="branch-current-name"></b></span>
+        <button type="button" class="branch-switch-btn" id="branch-switch-btn">تغيير الفرع</button>
+      </div>
       <div class="step-viewport">
         <section class="step" data-step="1">
           <div id="doctor-section" style="display:none; margin-bottom:20px;">
@@ -619,6 +650,87 @@
       <div class="addon-list" id="addon-list"></div>
       <p class="addon-list-footnote">كل خدمة جديدة هتتضاف هنا لوحدها — شكل الإعدادات الأساسية مش هيتأثر مهما زاد عدد الخدمات.</p>
     </div>
+
+    <div id="branches-screen" style="display:none;">
+      <div class="screen-head">
+        <button type="button" class="back-btn" id="back-to-addons-screen">›</button>
+        <h2 style="margin:0;">إدارة الفروع</h2>
+      </div>
+      <div id="branches-list"></div>
+      <button type="button" class="btn-secondary" id="add-branch-btn" style="width:100%; margin-top:10px;">➕ إضافة فرع جديد</button>
+      <p class="error-msg" id="branches-error"></p>
+    </div>
+
+    <div id="branch-form-screen" style="display:none;">
+      <div class="screen-head">
+        <button type="button" class="back-btn" id="back-to-branches-screen">›</button>
+        <h2 style="margin:0;" id="branch-form-title">إضافة فرع</h2>
+      </div>
+      <div class="field">
+        <label>اسم الفرع</label>
+        <input type="text" id="br-name" placeholder="مثال: فرع المعادي">
+      </div>
+      <div class="field">
+        <label>العنوان</label>
+        <input type="text" id="br-address" placeholder="مثال: شارع 9، المعادي، القاهرة">
+      </div>
+      <div class="field">
+        <label>رابط الموقع على جوجل ماب (اختياري)</label>
+        <input type="text" id="br-mapsLink" placeholder="الصق رابط المشاركة من تطبيق Maps" dir="ltr">
+      </div>
+      <div class="field">
+        <label>أيام العمل</label>
+        <div id="br-days-checkboxes" style="display:flex; flex-wrap:wrap; gap:8px 16px;"></div>
+      </div>
+      <div class="field">
+        <label>من الساعة</label>
+        <div class="doctor-input-row">
+          <select id="br-startHour12"></select>
+          <select id="br-startAmPm">
+            <option value="am">صباحاً</option>
+            <option value="pm">مساءً</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>لحد الساعة</label>
+        <div class="doctor-input-row">
+          <select id="br-endHour12"></select>
+          <select id="br-endAmPm">
+            <option value="am">صباحاً</option>
+            <option value="pm">مساءً</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>أقصى عدد حجوزات في نفس الميعاد</label>
+        <input type="number" id="br-maxPerSlot" min="1" value="5">
+      </div>
+      <div class="field">
+        <label>الخدمات</label>
+        <div class="tag-list" id="br-services-tags"></div>
+        <div class="tag-input-row">
+          <input type="text" id="br-services-input" placeholder="اسم الخدمة، مثال: تنظيف أسنان">
+          <button type="button" class="tag-add-btn" id="br-services-add">➕ إضافة</button>
+        </div>
+        <p class="hint">سيبها فاضية لو الفرع ده بيقدّم نفس خدمات العيادة الأساسية</p>
+      </div>
+      <div class="field">
+        <label>الدكاترة (اختياري)</label>
+        <div class="tag-list" id="br-doctors-tags"></div>
+        <div class="doctor-input-row">
+          <input type="text" id="br-doctor-name-input" placeholder="اسم الدكتور، مثال: د. منار">
+          <input type="tel" id="br-doctor-phone-input" placeholder="رقم واتساب (اختياري)">
+          <button type="button" class="tag-add-btn" id="br-doctors-add">➕ إضافة</button>
+        </div>
+        <p class="hint">سيبها فاضية لو الفرع ده بيستخدم نفس دكاترة العيادة الأساسية</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="delete-branch-btn" style="display:none; color:#c0392b; border-color:#c0392b;">حذف الفرع</button>
+        <button class="btn-primary" id="save-branch-btn">حفظ الفرع</button>
+      </div>
+      <p class="error-msg" id="branch-form-error"></p>
+    </div>
   </div>
 </div>
 
@@ -689,10 +801,19 @@ const ADDONS_CATALOG = [
     name: '📣 الرسائل الذكية',
     priceLabel: '٢٠٠ جنيه / شهريًا',
     description: 'لوحة تحكم بتجهزلك تذكيرات المرضى اللي معاهم ميعاد بكرة، وطلبات تقييم للمرضى اللي زاروا العيادة، ورسالة جماعية لكل المرضى القدامى بضغطة واحدة — وكل رسالة بتتفتح جاهزة في واتساب، إنتي بس بتضغطي إرسال. وكمان بتشوفي كل التقييمات اللي وصلتلك من المرضى في مكان واحد.'
+  },
+  {
+    id: 'multi_branch',
+    name: '🏢 فروع متعددة',
+    priceLabel: '١٥٠ جنيه / شهريًا',
+    description: 'لو عندك أكتر من فرع للعيادة، الخدمة دي بتخليك تضيفي كل فرع بعنوانه ورابط موقعه على الماب، وأيامه وساعات شغله، ودكاترته، وخدماته وأسعاره لوحده. المريض وهو بيحجز هيختار الفرع الأقرب له الأول، وبعدين هيشوف مواعيد الفرع ده بس. ولوحة التحكم عندك هتفضل واحدة، فيها فلتر تقدري بيه تشوفي حجوزات كل فرع لوحده أو الكل مع بعض.'
   }
 ];
 
 let appData = { settings: {}, bookings: [] };
+let baseSettings = null; // إعدادات العيادة الأساسية زي ما اتحمّلت أول مرة - بتفضل زي ما هي حتى لو المريض اختار فرع بعدين (appData بتتغيّر وقتها)
+let branchesListCache = []; // قائمة الفروع المتاحة للمريض - بتتحفظ لوحدها عشان تفضل موجودة حتى بعد ما appData تتغيّر لبيانات فرع معيّن
+let selectedBranchId = null;
 let selectedService = null;
 let selectedDoctor = null;
 let selectedDoctorWhatsapp = null;
@@ -769,6 +890,8 @@ function populateHour12Select(sel) {
 }
 populateHour12Select(document.getElementById('s-startHour12'));
 populateHour12Select(document.getElementById('s-endHour12'));
+populateHour12Select(document.getElementById('br-startHour12'));
+populateHour12Select(document.getElementById('br-endHour12'));
 
 // تحويل الأرقام العربية لإنجليزية تلقائيًا في كل حقول الأرقام/التليفونات
 ['phone', 'mb-phone', 's-doctor-phone-input', 's-clinicWhatsapp'].forEach(id => {
@@ -1067,6 +1190,7 @@ async function loadData() {
   try {
     const res = await fetch(API_URL + '?action=getPublicData&clinicId=' + encodeURIComponent(CLINIC_ID));
     appData = await res.json();
+    baseSettings = appData.settings;
 
     document.getElementById('loading').style.display = 'none';
 
@@ -1083,15 +1207,77 @@ async function loadData() {
       return;
     }
 
+    branchesListCache = Array.isArray(appData.settings.branches) ? appData.settings.branches : [];
+    if (branchesListCache.length > 0) {
+      renderBranchList();
+      document.getElementById('branch-select-ui').style.display = 'block';
+      return;
+    }
+
     renderBookingUI();
   } catch (err) {
     document.getElementById('loading').textContent = 'مفيش اتصال بالبيانات — تأكد إن رابط Apps Script متظبط.';
   }
 }
 
+function renderBranchList() {
+  const branches = branchesListCache || [];
+  document.getElementById('branch-list').innerHTML = branches.map((b) => `
+    <button type="button" class="branch-card" data-id="${b.id}">
+      <div class="branch-card-info">
+        <span class="branch-card-name">${escapeHtml(b.name)}</span>
+        ${b.address ? `<span class="branch-card-address">📍 ${escapeHtml(b.address)}</span>` : ''}
+      </div>
+      <span class="branch-card-arrow">‹</span>
+    </button>
+  `).join('');
+  document.querySelectorAll('#branch-list .branch-card').forEach((btn) => {
+    btn.addEventListener('click', () => selectBranch(btn.dataset.id));
+  });
+}
+
+async function selectBranch(branchId) {
+  try {
+    document.getElementById('branch-select-ui').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('loading').textContent = 'جاري تحميل بيانات الفرع...';
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getBranchPublicData', clinicId: CLINIC_ID, branchId })
+    });
+    const result = await res.json();
+    if (!result.settings) {
+      document.getElementById('loading').textContent = 'حصل خطأ في تحميل بيانات الفرع، حاول تاني';
+      return;
+    }
+    appData = result;
+    selectedBranchId = branchId;
+    document.getElementById('loading').style.display = 'none';
+    renderBookingUI();
+  } catch (err) {
+    document.getElementById('loading').textContent = 'مفيش اتصال بالبيانات، حاول تاني';
+  }
+}
+
+function switchBranch() {
+  selectedBranchId = null;
+  document.getElementById('booking-ui').style.display = 'none';
+  renderBranchList();
+  document.getElementById('branch-select-ui').style.display = 'block';
+}
+
 function renderBookingUI() {
   const s = appData.settings;
   document.getElementById('booking-ui').style.display = 'block';
+
+  const branchBar = document.getElementById('branch-current-bar');
+  if (s.branchId) {
+    document.getElementById('branch-current-name').textContent = s.branchName || '';
+    branchBar.style.display = 'flex';
+  } else {
+    branchBar.style.display = 'none';
+  }
 
   applyTheme(s.primaryColor || '#185fa5');
   document.getElementById('clinic-name').textContent = s.clinicName || 'العيادة';
@@ -1379,7 +1565,7 @@ async function performBooking() {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'book', clinicId: CLINIC_ID, day: selectedDay, time: selectedTime, service: selectedService, phone, doctor: selectedDoctor || '', patientName })
+      body: JSON.stringify({ action: 'book', clinicId: CLINIC_ID, day: selectedDay, time: selectedTime, service: selectedService, phone, doctor: selectedDoctor || '', patientName, branchId: selectedBranchId || undefined })
     });
     const rawText = await res.text();
     const result = JSON.parse(rawText);
@@ -1495,7 +1681,7 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     document.getElementById('s-securityQuestion').value = result.securityQuestion || '';
     document.getElementById('s-securityAnswer').value = result.securityAnswer || '';
 
-    const s = appData.settings;
+    const s = baseSettings || appData.settings;
     document.getElementById('s-clinicName').value = s.clinicName || '';
     document.getElementById('s-clinicSubtitle').value = s.clinicSubtitle || '';
 
@@ -1655,7 +1841,7 @@ document.getElementById('save-settings').addEventListener('click', async () => {
 
 // ====== الخدمات الإضافية (Add-ons) ======
 function renderAddonsEntry() {
-  const addons = (appData.settings && appData.settings.addons) || {};
+  const addons = (baseSettings && baseSettings.addons) || {};
   const activeCount = ADDONS_CATALOG.filter((a) => addons[a.id]).length;
   const hintEl = document.getElementById('addons-entry-hint');
   const pillEl = document.getElementById('addons-entry-pill');
@@ -1672,14 +1858,22 @@ function renderAddonsEntry() {
 
 function addonCardHTML(addon, isActive) {
   if (isActive) {
+    if (addon.id === 'multi_branch') {
+      return `
+        <div class="addon-card">
+          <div class="addon-active-badge">✅ خدمة "${addon.name}" مفعّلة على عيادتك</div>
+          <p class="addon-active-note">تقدر تضيفي كل فرع بعنوانه وأيامه ودكاترته وخدماته من هنا.</p>
+          <button type="button" class="addon-cta" id="open-branches-screen-btn" style="background:var(--primary);">🏢 إدارة الفروع</button>
+        </div>`;
+    }
     return `
       <div class="addon-card">
         <div class="addon-active-badge">✅ خدمة "${addon.name}" مفعّلة على عيادتك</div>
         <p class="addon-active-note">تقدر تضيف وتتابع مواعيد المرضى من قسم "مواعيد متابعة" في لوحة التحكم بتاعتك.</p>
       </div>`;
   }
-  const developerWhatsapp = toWhatsappNumber(appData.settings.developerWhatsapp);
-  const clinicName = appData.settings.clinicName || 'العيادة';
+  const developerWhatsapp = toWhatsappNumber(baseSettings.developerWhatsapp);
+  const clinicName = baseSettings.clinicName || 'العيادة';
   const waText = encodeURIComponent(`مرحبًا، عايز أشترك في خدمة "${addon.name}" لعيادة ${clinicName}`);
   const waHref = developerWhatsapp ? `https://wa.me/${developerWhatsapp}?text=${waText}` : '#';
   return `
@@ -1694,8 +1888,12 @@ function addonCardHTML(addon, isActive) {
 }
 
 function renderAddonsScreen() {
-  const addons = (appData.settings && appData.settings.addons) || {};
+  const addons = (baseSettings && baseSettings.addons) || {};
   document.getElementById('addon-list').innerHTML = ADDONS_CATALOG.map((a) => addonCardHTML(a, !!addons[a.id])).join('');
+  if (addons.multi_branch) {
+    const btn = document.getElementById('open-branches-screen-btn');
+    if (btn) btn.addEventListener('click', openBranchesScreen);
+  }
 }
 
 document.getElementById('open-addons-screen').addEventListener('click', () => {
@@ -1708,6 +1906,251 @@ document.getElementById('back-to-settings-form').addEventListener('click', () =>
   document.getElementById('addons-screen').style.display = 'none';
   document.getElementById('settings-modal-heading').style.display = 'block';
   document.getElementById('settings-form').style.display = 'block';
+});
+
+// ====== إدارة الفروع (خدمة إضافية: multi_branch) ======
+let brBranchesCache = [];
+let brEditingId = null; // null = وضع إضافة فرع جديد
+let brServicesArr = [];
+let brDoctorsArr = [];
+
+async function openBranchesScreen() {
+  document.getElementById('addons-screen').style.display = 'none';
+  document.getElementById('branches-screen').style.display = 'block';
+  await loadBranchesList();
+}
+
+async function loadBranchesList() {
+  const listEl = document.getElementById('branches-list');
+  const errEl = document.getElementById('branches-error');
+  errEl.style.display = 'none';
+  listEl.innerHTML = '<p class="tag-empty-hint">جاري التحميل...</p>';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'listBranches', clinicId: CLINIC_ID, pin: enteredPin })
+    });
+    const result = await res.json();
+    if (!result.success) {
+      errEl.textContent = result.message || 'حصل خطأ، حاول تاني';
+      errEl.style.display = 'block';
+      listEl.innerHTML = '';
+      return;
+    }
+    brBranchesCache = result.branches || [];
+    if (!brBranchesCache.length) {
+      listEl.innerHTML = '<p class="tag-empty-hint">لسه مفيش فروع مُضافة</p>';
+      return;
+    }
+    listEl.innerHTML = brBranchesCache.map((b) => `
+      <button type="button" class="branch-card" data-id="${b.id}">
+        <div class="branch-card-info">
+          <span class="branch-card-name">${escapeHtml(b.name)}</span>
+          ${b.address ? `<span class="branch-card-address">📍 ${escapeHtml(b.address)}</span>` : ''}
+        </div>
+        <span class="branch-card-arrow">‹</span>
+      </button>
+    `).join('');
+    listEl.querySelectorAll('.branch-card').forEach((btn) => {
+      btn.addEventListener('click', () => openBranchForm(btn.dataset.id));
+    });
+  } catch (err) {
+    errEl.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    errEl.style.display = 'block';
+    listEl.innerHTML = '';
+  }
+}
+
+function renderBrServicesTags() {
+  const box = document.getElementById('br-services-tags');
+  if (!brServicesArr.length) {
+    box.innerHTML = '<p class="tag-empty-hint">لسه مفيش خدمات مضافة لهذا الفرع</p>';
+    return;
+  }
+  box.innerHTML = brServicesArr.map((name, i) =>
+    `<span class="tag-item">${escapeHtml(name)}<button type="button" class="tag-remove" data-i="${i}" aria-label="حذف الخدمة">✕</button></span>`
+  ).join('');
+}
+function addBrServiceFromInput() {
+  const input = document.getElementById('br-services-input');
+  const val = input.value.trim();
+  if (!val) return;
+  if (brServicesArr.some(s => s === val)) { input.value = ''; input.focus(); return; }
+  brServicesArr.push(val);
+  input.value = '';
+  renderBrServicesTags();
+  input.focus();
+}
+function renderBrDoctorsTags() {
+  const box = document.getElementById('br-doctors-tags');
+  if (!brDoctorsArr.length) {
+    box.innerHTML = '<p class="tag-empty-hint">لسه مفيش دكاترة مضافين لهذا الفرع</p>';
+    return;
+  }
+  box.innerHTML = brDoctorsArr.map((d, i) =>
+    `<span class="tag-item">${escapeHtml(d.name)}${d.whatsapp ? ' — ' + escapeHtml(d.whatsapp) : ''}<button type="button" class="tag-remove" data-i="${i}" aria-label="حذف الدكتور">✕</button></span>`
+  ).join('');
+}
+function addBrDoctorFromInput() {
+  const nameInput = document.getElementById('br-doctor-name-input');
+  const phoneInput = document.getElementById('br-doctor-phone-input');
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  const whatsapp = normalizeDigits(phoneInput.value).replace(/[^0-9]/g, '');
+  brDoctorsArr.push({ name, whatsapp });
+  nameInput.value = '';
+  phoneInput.value = '';
+  renderBrDoctorsTags();
+  nameInput.focus();
+}
+document.getElementById('br-services-tags').addEventListener('click', (e) => {
+  const btn = e.target.closest('.tag-remove');
+  if (!btn) return;
+  brServicesArr.splice(Number(btn.dataset.i), 1);
+  renderBrServicesTags();
+});
+document.getElementById('br-services-add').addEventListener('click', addBrServiceFromInput);
+document.getElementById('br-services-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addBrServiceFromInput(); }
+});
+document.getElementById('br-doctors-tags').addEventListener('click', (e) => {
+  const btn = e.target.closest('.tag-remove');
+  if (!btn) return;
+  brDoctorsArr.splice(Number(btn.dataset.i), 1);
+  renderBrDoctorsTags();
+});
+document.getElementById('br-doctors-add').addEventListener('click', addBrDoctorFromInput);
+
+function openBranchForm(branchId) {
+  brEditingId = branchId || null;
+  const branch = branchId ? brBranchesCache.find((b) => String(b.id) === String(branchId)) : null;
+  document.getElementById('branch-form-title').textContent = branch ? 'تعديل الفرع' : 'إضافة فرع';
+  document.getElementById('delete-branch-btn').style.display = branch ? 'block' : 'none';
+  document.getElementById('branch-form-error').style.display = 'none';
+
+  document.getElementById('br-name').value = branch ? branch.name : '';
+  document.getElementById('br-address').value = branch ? branch.address : '';
+  document.getElementById('br-mapsLink').value = branch ? branch.mapsLink : '';
+
+  const currentDays = ((branch && branch.days) || '').split(',').map(d => normalizeArabicDay(d)).filter(Boolean);
+  const daysContainer = document.getElementById('br-days-checkboxes');
+  daysContainer.innerHTML = ARABIC_DAY_NAMES.map(name => {
+    const checked = currentDays.includes(normalizeArabicDay(name)) ? 'checked' : '';
+    return `<label style="display:flex; align-items:center; gap:5px; font-size:13.5px; font-weight:400;">
+      <input type="checkbox" class="br-day-cb" value="${name}" style="width:auto; height:auto;" ${checked}> ${name}
+    </label>`;
+  }).join('');
+
+  const startH12 = hour24to12(branch ? branch.startHour : 10);
+  document.getElementById('br-startHour12').value = startH12.h12;
+  document.getElementById('br-startAmPm').value = startH12.ampm;
+  const endH12 = hour24to12(branch ? branch.endHour : 22);
+  document.getElementById('br-endHour12').value = endH12.h12;
+  document.getElementById('br-endAmPm').value = endH12.ampm;
+  document.getElementById('br-maxPerSlot').value = (branch && branch.maxPerSlot) || 5;
+
+  brServicesArr = ((branch && branch.services) || '').split(',').map(x => x.trim()).filter(Boolean);
+  renderBrServicesTags();
+  brDoctorsArr = parseDoctors((branch && branch.doctors) || '');
+  renderBrDoctorsTags();
+
+  document.getElementById('branches-screen').style.display = 'none';
+  document.getElementById('branch-form-screen').style.display = 'block';
+}
+
+document.getElementById('add-branch-btn').addEventListener('click', () => openBranchForm(null));
+document.getElementById('back-to-branches-screen').addEventListener('click', () => {
+  document.getElementById('branch-form-screen').style.display = 'none';
+  document.getElementById('branches-screen').style.display = 'block';
+});
+document.getElementById('back-to-addons-screen').addEventListener('click', () => {
+  document.getElementById('branches-screen').style.display = 'none';
+  document.getElementById('addons-screen').style.display = 'block';
+});
+
+document.getElementById('save-branch-btn').addEventListener('click', async () => {
+  const errEl = document.getElementById('branch-form-error');
+  const saveBtn = document.getElementById('save-branch-btn');
+  const name = document.getElementById('br-name').value.trim();
+  if (!name) {
+    errEl.textContent = 'من فضلك اكتب اسم الفرع';
+    errEl.style.display = 'block';
+    return;
+  }
+  const checkedDays = Array.from(document.querySelectorAll('.br-day-cb:checked')).map(cb => cb.value);
+  const branchPayload = {
+    name,
+    address: document.getElementById('br-address').value.trim(),
+    mapsLink: document.getElementById('br-mapsLink').value.trim(),
+    days: checkedDays.join(','),
+    startHour: hour12to24(document.getElementById('br-startHour12').value, document.getElementById('br-startAmPm').value, false),
+    endHour: hour12to24(document.getElementById('br-endHour12').value, document.getElementById('br-endAmPm').value, true),
+    maxPerSlot: parseInt(document.getElementById('br-maxPerSlot').value, 10) || 5,
+    services: brServicesArr.join(','),
+    doctors: brDoctorsArr.map(d => d.whatsapp ? `${d.name},${d.whatsapp}` : d.name).join('\n'),
+  };
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'جاري الحفظ...';
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: brEditingId ? 'updateBranch' : 'createBranch',
+        clinicId: CLINIC_ID, pin: enteredPin,
+        branchId: brEditingId || undefined,
+        branch: branchPayload,
+      })
+    });
+    const result = await res.json();
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'حفظ الفرع';
+    if (!result.success) {
+      errEl.textContent = result.message || 'حصل خطأ، حاول تاني';
+      errEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('branch-form-screen').style.display = 'none';
+    document.getElementById('branches-screen').style.display = 'block';
+    await loadBranchesList();
+  } catch (err) {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'حفظ الفرع';
+    errEl.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('delete-branch-btn').addEventListener('click', async () => {
+  if (!brEditingId) return;
+  if (!confirm('متأكد إنك عايز تحذف الفرع ده؟ الحجوزات القديمة بتاعته هتفضل موجودة بس من غير ربط بفرع.')) return;
+  const errEl = document.getElementById('branch-form-error');
+  const delBtn = document.getElementById('delete-branch-btn');
+  delBtn.disabled = true;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'deleteBranch', clinicId: CLINIC_ID, pin: enteredPin, branchId: brEditingId })
+    });
+    const result = await res.json();
+    delBtn.disabled = false;
+    if (!result.success) {
+      errEl.textContent = result.message || 'حصل خطأ، حاول تاني';
+      errEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('branch-form-screen').style.display = 'none';
+    document.getElementById('branches-screen').style.display = 'block';
+    await loadBranchesList();
+  } catch (err) {
+    delBtn.disabled = false;
+    errEl.textContent = 'حصل خطأ في الاتصال، حاول تاني';
+    errEl.style.display = 'block';
+  }
 });
 
 // ====== حجزك السابق (بحث/تعديل/إلغاء برقم الموبايل بس، من غير كلمة سر العيادة) ======
@@ -1959,6 +2402,8 @@ document.getElementById('mb-confirm-cancel').addEventListener('click', async () 
     err.style.display = 'block';
   }
 });
+
+document.getElementById('branch-switch-btn').addEventListener('click', switchBranch);
 
 loadData();
 </script>
