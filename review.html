@@ -108,10 +108,10 @@ function renderForm() {
     <div class="stars" id="stars">
       ${[1,2,3,4,5].map((n) => `<span class="star" data-val="${n}">★</span>`).join('')}
     </div>
-    <p class="rating-label" id="rating-label">اضغطي على النجوم عشان تقيّمي</p>
+    <p class="rating-label" id="rating-label">اضغط على النجوم عشان تقيّم</p>
     <div class="field">
       <label>تعليق (اختياري)</label>
-      <textarea id="review-comment" rows="3" placeholder="اكتبي رأيك هنا..." maxlength="500"></textarea>
+      <textarea id="review-comment" rows="3" placeholder="اكتب رأيك هنا..." maxlength="500"></textarea>
     </div>
     <p class="footer-note" id="submit-error" style="color:var(--bad); display:none;"></p>
     <button type="button" class="btn-primary" id="submit-btn">إرسال التقييم</button>
@@ -162,7 +162,7 @@ async function doSubmit() {
   const errorEl = document.getElementById('submit-error');
   errorEl.style.display = 'none';
   if (!selectedRating) {
-    errorEl.textContent = 'من فضلك اختاري تقييم من ١ لـ ٥ نجوم';
+    errorEl.textContent = 'من فضلك اختار تقييم من ١ لـ ٥ نجوم';
     errorEl.style.display = 'block';
     return;
   }

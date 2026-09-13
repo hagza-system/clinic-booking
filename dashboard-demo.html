@@ -121,7 +121,7 @@
 <div id="pin-gate">
   <h1>حجزة <span style="font-weight:400;font-size:0.6em;">HAGZA</span></h1>
   <p style="margin-top:-8px;margin-bottom:10px;">لوحة تحكم الحجوزات</p>
-  <p>ادخلي بنفس كلمة سر إعدادات العيادة</p>
+  <p>ادخل بنفس كلمة سر إعدادات العيادة</p>
   <div class="field">
     <input type="password" id="pin-input" placeholder="كلمة السر">
   </div>
@@ -187,7 +187,7 @@
     <div class="field">
       <select id="block-date-select"></select>
     </div>
-    <button type="button" id="check-block-btn" class="btn-secondary" style="width:100%;">تحقق واحظري اليوم ده</button>
+    <button type="button" id="check-block-btn" class="btn-secondary" style="width:100%;">تحقق واحظر اليوم ده</button>
     <div id="block-warning" style="display:none; margin-top:12px;"></div>
     <div id="blocked-dates-list" style="margin-top:14px;"></div>
   </div>
@@ -410,7 +410,7 @@ document.getElementById('check-block-btn').addEventListener('click', () => {
 
   let html = '';
   if (affected.length > 0) {
-    html += `<p style="color:#b3392f; font-weight:600; margin-bottom:10px; font-size:13.5px;">⚠️ فيه ${affected.length} حجز في اليوم ده - يفضل تبلغي العملاء الأول:</p>`;
+    html += `<p style="color:#b3392f; font-weight:600; margin-bottom:10px; font-size:13.5px;">⚠️ فيه ${affected.length} حجز في اليوم ده - يفضل تبلغ العملاء الأول:</p>`;
     affected.forEach(b => {
       const msg = encodeURIComponent(`مرحباً، للأسف محتاجين نأجل موعدك يوم ${dateKey} الساعة ${b.time} لظرف طارئ في العيادة. تقدر/ي تتواصل معانا نحدد ميعاد بديل يناسبك.`);
       html += `
@@ -630,7 +630,7 @@ function renderPastList() {
 }
 
 async function doCleanupPastNow() {
-  if (!confirm('متأكدة إنك عايزة تمسحي كل المواعيد اللي فاتت دلوقتي؟ الخطوة دي مينفعش ترجع فيها.')) return;
+  if (!confirm('متأكد إنك عايز تمسح كل المواعيد اللي فاتت دلوقتي؟ الخطوة دي مينفعش ترجع فيها.')) return;
   const btn = document.getElementById('cleanup-now-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'جاري المسح...'; }
   try {
@@ -791,10 +791,10 @@ function showNotifyBanner(booking, message) {
   const banner = document.getElementById('notify-banner');
   const waMsg = encodeURIComponent(message);
   banner.innerHTML = `
-    <p style="font-size:13.5px; margin-bottom:10px;">✅ اتحفظ التغيير - متنسيش تبلغي العميل صاحب الرقم <b dir="ltr">${booking.phone}</b></p>
+    <p style="font-size:13.5px; margin-bottom:10px;">✅ اتحفظ التغيير - متنساش تبلغ العميل صاحب الرقم <b dir="ltr">${booking.phone}</b></p>
     <a href="https://wa.me/${toWhatsappFormat(booking.phone)}?text=${waMsg}" target="_blank" rel="noopener"
        style="display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:10px; background:#25D366; color:#fff; text-decoration:none; font-size:13.5px; font-weight:600;">
-      📱 بلغي العميل على واتساب
+      📱 بلغ العميل على واتساب
     </a>
     <button type="button" id="dismiss-banner" style="background:none; border:none; color:var(--muted); font-size:12.5px; cursor:pointer; margin-right:10px; text-decoration:underline; font-family:inherit;">إخفاء</button>
   `;
@@ -803,7 +803,7 @@ function showNotifyBanner(booking, message) {
 }
 
 async function doCancel(booking) {
-  if (!confirm(`متأكدة إنك عايزة تلغي حجز الساعة ${booking.time} يوم ${booking.day}؟`)) return;
+  if (!confirm(`متأكد إنك عايز تلغي حجز الساعة ${booking.time} يوم ${booking.day}؟`)) return;
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -943,7 +943,7 @@ function renderFollowupList() {
   });
   container.querySelectorAll('.fu-cancel-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      if (!confirm('متأكدة إنك عايزة تلغي موعد المتابعة ده؟')) return;
+      if (!confirm('متأكد إنك عايز تلغي موعد المتابعة ده؟')) return;
       const fuBooking = followupBookings.find((x) => String(x.id) === btn.dataset.id);
       btn.disabled = true;
       const res = await fetch(API_URL, {
@@ -1161,7 +1161,7 @@ function renderSmBroadcast() {
   el.innerHTML = `
     <div class="field">
       <label>نص الرسالة (هيتفتح واتساب بنفس النص لكل مريض تضغطي عليه)</label>
-      <textarea id="sm-broadcast-text" class="sm-broadcast-text" rows="3" placeholder="اكتبي رسالتك هنا..."></textarea>
+      <textarea id="sm-broadcast-text" class="sm-broadcast-text" rows="3" placeholder="اكتب رسالتك هنا..."></textarea>
     </div>
     <p class="sm-count-line">عدد المرضى المسجلين: ${smPatients.length}</p>
     <div id="sm-broadcast-list"></div>`;
@@ -1180,7 +1180,7 @@ function renderSmBroadcast() {
   listEl.querySelectorAll('.sm-broadcast-send').forEach((btn) => {
     btn.addEventListener('click', () => {
       const text = document.getElementById('sm-broadcast-text').value.trim();
-      if (!text) { alert('من فضلك اكتبي نص الرسالة الأول'); return; }
+      if (!text) { alert('من فضلك اكتب نص الرسالة الأول'); return; }
       window.open(`https://wa.me/${toWhatsappFormat(btn.dataset.phone)}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
     });
   });
