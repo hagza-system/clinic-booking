@@ -467,7 +467,10 @@
 <!-- لوحة الإعدادات -->
 <div class="modal-overlay" id="settings-modal">
   <div class="modal">
-    <h2 id="settings-modal-heading">إعدادات العيادة</h2>
+    <div id="settings-modal-heading" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <h2 style="margin:0;">إعدادات العيادة</h2>
+      <button type="button" id="quick-add-branch-btn" style="display:none; flex:0 0 auto; background:var(--primary); color:#fff; border:none; border-radius:10px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap;">➕ إضافة فرع</button>
+    </div>
 
     <div id="pin-step">
       <div class="field">
@@ -1637,7 +1640,8 @@ const settingsModal = document.getElementById('settings-modal');
 
 document.getElementById('open-settings').addEventListener('click', () => {
   settingsModal.classList.add('open');
-  document.getElementById('settings-modal-heading').style.display = 'block';
+  document.getElementById('settings-modal-heading').style.display = 'flex';
+  document.getElementById('quick-add-branch-btn').style.display = 'none';
   document.getElementById('pin-step').style.display = 'block';
   document.getElementById('recover-form').style.display = 'none';
   document.getElementById('settings-form').style.display = 'none';
@@ -1718,6 +1722,7 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     document.getElementById('s-mapsLink').value = s.mapsLink || '';
 
     renderAddonsEntry();
+    document.getElementById('quick-add-branch-btn').style.display = (s.addons && s.addons.multi_branch) ? 'block' : 'none';
   } catch (err) {
     submitBtn.disabled = false;
     pinError.textContent = 'حصل خطأ في الاتصال، حاول تاني';
@@ -1905,7 +1910,7 @@ document.getElementById('open-addons-screen').addEventListener('click', () => {
 });
 document.getElementById('back-to-settings-form').addEventListener('click', () => {
   document.getElementById('addons-screen').style.display = 'none';
-  document.getElementById('settings-modal-heading').style.display = 'block';
+  document.getElementById('settings-modal-heading').style.display = 'flex';
   document.getElementById('settings-form').style.display = 'block';
 });
 
@@ -2061,6 +2066,14 @@ function openBranchForm(branchId) {
 }
 
 document.getElementById('add-branch-btn').addEventListener('click', () => openBranchForm(null));
+document.getElementById('quick-add-branch-btn').addEventListener('click', async () => {
+  // اختصار لأصحاب خدمة "فروع متعددة": يوديهم على طول لشاشة إضافة فرع من غير ما يدخلوا الخدمات الإضافية الأول
+  document.getElementById('settings-modal-heading').style.display = 'none';
+  document.getElementById('settings-form').style.display = 'none';
+  renderAddonsScreen();
+  await openBranchesScreen();
+  openBranchForm(null);
+});
 document.getElementById('back-to-branches-screen').addEventListener('click', () => {
   document.getElementById('branch-form-screen').style.display = 'none';
   document.getElementById('branches-screen').style.display = 'block';
