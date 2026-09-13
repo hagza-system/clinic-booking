@@ -697,6 +697,7 @@ let selectedService = null;
 let selectedDoctor = null;
 let selectedDoctorWhatsapp = null;
 let doctorsEnabled = false;
+let hasDoctor = false;
 let selectedDay = null;
 let selectedDateObj = null;
 let selectedTime = null;
@@ -1113,6 +1114,7 @@ function renderBookingUI() {
 
   const doctorList = parseDoctors(s.doctors);
   doctorsEnabled = doctorList.length > 1;
+  hasDoctor = doctorList.length >= 1;
   const doctorSection = document.getElementById('doctor-section');
   if (doctorsEnabled) {
     doctorSection.style.display = 'block';
@@ -1266,7 +1268,7 @@ function goToStep(n, skipAnim) {
     else sec.style.animation = '';
   });
   if (n === 5) {
-    document.getElementById('sum-doctor-row').style.display = doctorsEnabled ? 'flex' : 'none';
+    document.getElementById('sum-doctor-row').style.display = hasDoctor ? 'flex' : 'none';
     document.getElementById('sum-doctor').textContent = selectedDoctor || '—';
     document.getElementById('sum-service').textContent = selectedService || '—';
     document.getElementById('sum-day').textContent = selectedDay || '—';
@@ -1393,7 +1395,7 @@ async function performBooking() {
 
     appData.bookings.push({ day: selectedDay, time: selectedTime, service: selectedService, phone, doctor: selectedDoctor || '' });
 
-    document.getElementById('fin-doctor-row').style.display = doctorsEnabled ? 'flex' : 'none';
+    document.getElementById('fin-doctor-row').style.display = hasDoctor ? 'flex' : 'none';
     document.getElementById('fin-doctor').textContent = selectedDoctor || '—';
     document.getElementById('fin-name').textContent = patientName || '—';
     document.getElementById('fin-service').textContent = selectedService;
@@ -1402,7 +1404,7 @@ async function performBooking() {
     document.getElementById('fin-phone').textContent = phone;
     document.getElementById('ref-code').textContent = 'رقم الحجز #' + Date.now().toString().slice(-6);
 
-    const doctorLine = doctorsEnabled ? `\nالدكتور: ${selectedDoctor}` : '';
+    const doctorLine = hasDoctor ? `\nالدكتور: ${selectedDoctor}` : '';
     const waMsgText = `مرحباً، عايز/ة أأكد حجزي:\nالاسم: ${patientName}${doctorLine}\nالخدمة: ${selectedService}\nالتاريخ: ${selectedDay}\nالوقت: ${selectedTime}\nرقم الموبايل: ${phone}`;
 
     const clinicWhatsapp = toWhatsappNumber(appData.settings.clinicWhatsapp);
@@ -1417,7 +1419,7 @@ async function performBooking() {
 
     const doctorWhatsapp = toWhatsappNumber(selectedDoctorWhatsapp);
     const doctorWaLink = document.getElementById('whatsapp-doctor-link');
-    if (doctorsEnabled && doctorWhatsapp && doctorWhatsapp !== clinicWhatsapp) {
+    if (hasDoctor && doctorWhatsapp && doctorWhatsapp !== clinicWhatsapp) {
       doctorWaLink.textContent = `📱 أرسلي تأكيد الحجز لـ ${selectedDoctor} على واتساب`;
       doctorWaLink.href = `https://wa.me/${doctorWhatsapp}?text=${encodeURIComponent('مرحباً ' + selectedDoctor + '، ' + waMsgText)}`;
       doctorWaLink.style.display = 'flex';
@@ -1425,7 +1427,7 @@ async function performBooking() {
       doctorWaLink.style.display = 'none';
     }
 
-    const calendarTitle = doctorsEnabled ? `${selectedService} - ${selectedDoctor}` : selectedService;
+    const calendarTitle = hasDoctor ? `${selectedService} - ${selectedDoctor}` : selectedService;
     const calendarLink = document.getElementById('calendar-link');
     calendarLink.href = buildCalendarLink(
       appData.settings.clinicName || 'العيادة', calendarTitle, selectedDateObj, selectedTime, appData.settings.mapsLink
