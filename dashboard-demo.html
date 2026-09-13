@@ -299,7 +299,12 @@ function renderBranchFilterRow() {
 }
 
 function applyBranchFilterAndRender() {
-  bookings = currentBranchFilter ? allBookingsFull.filter((b) => b.branchId === currentBranchFilter) : allBookingsFull;
+  // "__main__" هي "الفرع الرئيسي" (بيانات العيادة الأساسية) - حجوزاته متسجلة في القاعدة بـ branch_id فاضي، مش "__main__" فعليًا
+  if (currentBranchFilter === '__main__') {
+    bookings = allBookingsFull.filter((b) => !b.branchId);
+  } else {
+    bookings = currentBranchFilter ? allBookingsFull.filter((b) => b.branchId === currentBranchFilter) : allBookingsFull;
+  }
   renderDashboard();
 }
 
