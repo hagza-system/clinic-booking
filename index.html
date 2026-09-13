@@ -683,6 +683,11 @@
         <input type="text" id="br-mapsLink" placeholder="الصق رابط المشاركة من تطبيق Maps" dir="ltr">
       </div>
       <div class="field">
+        <label>رقم واتساب الفرع (اختياري)</label>
+        <input type="text" id="br-whatsapp" placeholder="مثال: 201012345678" dir="ltr">
+        <p class="hint">لو سبته فاضي، تأكيدات الحجز في الفرع ده هتتبعت على رقم واتساب العيادة الأساسي. اكتبه لو الفرع ده عايز رقم مستقل يوصله بس.</p>
+      </div>
+      <div class="field">
         <label>أيام العمل</label>
         <div id="br-days-checkboxes" style="display:flex; flex-wrap:wrap; gap:8px 16px;"></div>
       </div>
@@ -898,7 +903,7 @@ populateHour12Select(document.getElementById('br-startHour12'));
 populateHour12Select(document.getElementById('br-endHour12'));
 
 // تحويل الأرقام العربية لإنجليزية تلقائيًا في كل حقول الأرقام/التليفونات
-['phone', 'mb-phone', 's-doctor-phone-input', 's-clinicWhatsapp'].forEach(id => {
+['phone', 'mb-phone', 's-doctor-phone-input', 's-clinicWhatsapp', 'br-whatsapp'].forEach(id => {
   attachDigitNormalizer(document.getElementById(id));
 });
 
@@ -1610,7 +1615,7 @@ async function performBooking() {
     const doctorWhatsapp = toWhatsappNumber(selectedDoctorWhatsapp);
     const doctorWaLink = document.getElementById('whatsapp-doctor-link');
     if (hasDoctor && doctorWhatsapp && doctorWhatsapp !== clinicWhatsapp) {
-      doctorWaLink.textContent = `📱 أرسلي تأكيد الحجز لـ ${selectedDoctor} على واتساب`;
+      doctorWaLink.textContent = `📱 ارسل تأكيد الحجز لـ ${selectedDoctor} على واتساب`;
       doctorWaLink.href = `https://wa.me/${doctorWhatsapp}?text=${encodeURIComponent('مرحباً ' + selectedDoctor + '، ' + waMsgText)}`;
       doctorWaLink.style.display = 'flex';
     } else {
@@ -1681,6 +1686,16 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     enteredPin = typedPin;
 
     document.getElementById('pin-step').style.display = 'none';
+
+    // لو المريض/الدكتور واقف على فرع حقيقي (مش "الفرع الرئيسي")، الإعدادات هنا تبقى بتاعت الفرع ده بس
+    // (اسمه، عنوانه، أيامه، دكاترته، خدماته، رقم واتسابه) - مش إعدادات العيادة العامة كلها
+    if (selectedBranchId && selectedBranchId !== '__main__') {
+      document.getElementById('settings-modal-heading').style.display = 'none';
+      await loadBranchesList();
+      openBranchForm(selectedBranchId);
+      return;
+    }
+
     document.getElementById('settings-form').style.display = 'block';
 
     document.getElementById('s-securityQuestion').value = result.securityQuestion || '';
@@ -2038,6 +2053,7 @@ function openBranchForm(branchId) {
   document.getElementById('br-name').value = branch ? branch.name : '';
   document.getElementById('br-address').value = branch ? branch.address : '';
   document.getElementById('br-mapsLink').value = branch ? branch.mapsLink : '';
+  document.getElementById('br-whatsapp').value = branch ? (branch.whatsapp || '') : '';
 
   const currentDays = ((branch && branch.days) || '').split(',').map(d => normalizeArabicDay(d)).filter(Boolean);
   const daysContainer = document.getElementById('br-days-checkboxes');
@@ -2097,6 +2113,7 @@ document.getElementById('save-branch-btn').addEventListener('click', async () =>
     name,
     address: document.getElementById('br-address').value.trim(),
     mapsLink: document.getElementById('br-mapsLink').value.trim(),
+    whatsapp: document.getElementById('br-whatsapp').value.trim(),
     days: checkedDays.join(','),
     startHour: hour12to24(document.getElementById('br-startHour12').value, document.getElementById('br-startAmPm').value, false),
     endHour: hour12to24(document.getElementById('br-endHour12').value, document.getElementById('br-endAmPm').value, true),
