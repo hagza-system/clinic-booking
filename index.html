@@ -1689,15 +1689,8 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
 
     document.getElementById('pin-step').style.display = 'none';
 
-    // لو المريض/الدكتور واقف على فرع حقيقي (مش "الفرع الرئيسي")، الإعدادات هنا تبقى بتاعت الفرع ده بس
-    // (اسمه، عنوانه، أيامه، دكاترته، خدماته، رقم واتسابه) - مش إعدادات العيادة العامة كلها
-    if (selectedBranchId && selectedBranchId !== '__main__') {
-      document.getElementById('settings-modal-heading').style.display = 'none';
-      await loadBranchesList();
-      openBranchForm(selectedBranchId);
-      return;
-    }
-
+    // زرار الإعدادات دايمًا بيفتح إعدادات العيادة العامة (اسمها، وصفها، خدماتها...) مهما كان الفرع المختار حاليًا.
+    // تعديل إعدادات فرع معين بيتم من جوه "الخدمات الإضافية ← إدارة الفروع" زي العادة.
     document.getElementById('settings-form').style.display = 'block';
 
     document.getElementById('s-securityQuestion').value = result.securityQuestion || '';
