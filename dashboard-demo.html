@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>حجزة HAGZA | لوحة تحكم الحجوزات</title>
+<link rel="manifest" id="pwa-manifest" href="manifest.json">
+<meta name="theme-color" content="#185fa5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="حجزة">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -215,6 +223,26 @@
 const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
 // معرّف العيادة بيتقرأ من رابط الصفحة (?clinic=xxx)، ولو مفيش بياخد demo-clinic افتراضياً
 const CLINIC_ID = new URLSearchParams(location.search).get('clinic') || "demo-clinic";
+
+// ====== تفعيل "تثبيت كتطبيق" (PWA): لما الدكتور يضيف لوحة التحكم للشاشة الرئيسية، الأيقونة لازم تفتح نفس رابط عيادته بالظبط ======
+// الـ manifest.json ملف واحد مشترك لكل العيادات، فبنعدّل رابط البداية (start_url) وقت التحميل ليشمل ?clinic=xxx بتاع الصفحة الحالية
+(function setupPwaManifest() {
+  try {
+    fetch('manifest.json').then((r) => r.json()).then((manifest) => {
+      const page = location.pathname.split('/').pop() || 'dashboard-demo.html';
+      manifest.start_url = page + location.search;
+      manifest.scope = './';
+      manifest.name = 'حجزة - لوحة تحكم العيادة';
+      manifest.short_name = 'حجزة';
+      const blobUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' }));
+      const link = document.getElementById('pwa-manifest');
+      if (link) link.setAttribute('href', blobUrl);
+    }).catch(() => {});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  } catch (e) {}
+})();
 const baseUrl = 'https://hagza-system.github.io/clinic-booking/';
 
 let settings = {};
