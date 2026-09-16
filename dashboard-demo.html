@@ -154,7 +154,7 @@
     <div id="service-chart"></div>
   </div>
   <div class="chart-card" id="followup-section" style="display:none;">
-    <h3>🎁 مواعيد المتابعة</h3>
+    <h3>🎁 مواعيد المتابعة <span id="fu-unseen-badge" style="display:none; background:#e0432b; color:#fff; font-size:12px; border-radius:999px; padding:2px 8px; margin-inline-start:6px; vertical-align:middle;"></span></h3>
     <div class="field">
       <label>اسم المريض</label>
       <input type="text" id="fu-patient-name" placeholder="اسم المريض">
@@ -397,6 +397,7 @@ function renderDashboard() {
     populateFollowupTimeSelect();
     loadFollowupBookings();
     startFollowupAutoRefresh();
+    refreshFollowupUnseenBadge();
   } else {
     stopFollowupAutoRefresh();
   }
@@ -908,6 +909,30 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && followupPollTimer) loadFollowupBookings();
 });
 
+// بادج "مواعيد متابعة مؤكدة لسه ما شفتهاش" - بيظهر العدد لما تفتح الداشبورد، وبعدها بيتصفّر (زي أي إشعار اتشاف)
+async function refreshFollowupUnseenBadge() {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getFollowupUnseenCount', clinicId: CLINIC_ID, pin: enteredPin })
+    });
+    const result = await res.json();
+    const badge = document.getElementById('fu-unseen-badge');
+    if (result.success && result.count > 0) {
+      badge.textContent = result.count;
+      badge.style.display = 'inline-block';
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'markFollowupSeen', clinicId: CLINIC_ID, pin: enteredPin })
+      }).catch(() => {});
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch (err) { /* غير حرج */ }
+}
+
 function followupConfirmLink(id) {
   return `${baseUrl}confirm-followup.html?clinic=${encodeURIComponent(CLINIC_ID)}&id=${encodeURIComponent(id)}`;
 }
@@ -1096,15 +1121,16 @@ function renderSmReminders() {
     const clinicName = settings.clinicName || 'العيادة';
     const msg = encodeURIComponent(`مرحباً ${b.patientName}، تذكير بمعادك بكرة في ${clinicName} الساعة ${b.time}. في انتظارك! 🌸`);
     const link = `https://wa.me/${toWhatsappFormat(b.phone)}?text=${msg}`;
+    const followupTag = b.type === 'followup' ? ' <span style="background:#f0e6d2; color:#8a6d1f; font-size:11px; border-radius:6px; padding:1px 6px;">متابعة</span>' : '';
     return `
-    <div class="fu-row" data-id="${b.id}">
+    <div class="fu-row" data-id="${b.id}" data-type="${b.type || 'booking'}">
       <div class="fu-info">
-        <b>${b.patientName || 'بدون اسم'}</b>
+        <b>${b.patientName || 'بدون اسم'}</b>${followupTag}
         <span dir="ltr">${b.phone}</span>
         <span>${b.day} — ${b.time}${b.service ? ' — ' + b.service : ''}</span>
       </div>
       <div class="fu-actions">
-        <a class="icon-btn sm-reminder-send" data-id="${b.id}" href="${link}" target="_blank" rel="noopener">📱 إرسال التذكير</a>
+        <a class="icon-btn sm-reminder-send" data-id="${b.id}" data-type="${b.type || 'booking'}" href="${link}" target="_blank" rel="noopener">📱 إرسال التذكير</a>
       </div>
     </div>`;
   }).join('');
@@ -1114,10 +1140,10 @@ function renderSmReminders() {
         await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'markReminderSent', clinicId: CLINIC_ID, pin: enteredPin, id: a.dataset.id })
+          body: JSON.stringify({ action: 'markReminderSent', clinicId: CLINIC_ID, pin: enteredPin, id: a.dataset.id, type: a.dataset.type })
         });
       } catch (err) { /* غير حرج */ }
-      smReminders = smReminders.filter((x) => String(x.id) !== a.dataset.id);
+      smReminders = smReminders.filter((x) => !(String(x.id) === a.dataset.id && (x.type || 'booking') === a.dataset.type));
       renderSmReminders();
     });
   });
