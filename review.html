@@ -76,6 +76,10 @@ let currentBooking = null;
 let currentClinicName = '';
 let selectedRating = 0;
 
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function renderError(message) {
   card.innerHTML = `
     <h1>تقييم الزيارة</h1>
@@ -86,7 +90,7 @@ function renderError(message) {
 function renderThankYou() {
   card.innerHTML = `
     <h1>شكراً لك 🙏</h1>
-    <p class="clinic-name">${currentClinicName || 'العيادة'}</p>
+    <p class="clinic-name">${escapeHtml(currentClinicName) || 'العيادة'}</p>
     <div class="status-box good">
       ✅ تم استلام تقييمك بنجاح<br>
       <span style="font-weight:400; font-size:13px;">تقييمك بيساعدنا نطور من خدمتنا</span>
@@ -99,11 +103,11 @@ const RATING_LABELS = { 1: 'مش راضي خالص', 2: 'مش راضي', 3: 'ع�
 function renderForm() {
   card.innerHTML = `
     <h1>قيّم زيارتك</h1>
-    <p class="clinic-name">${currentClinicName || 'العيادة'}</p>
+    <p class="clinic-name">${escapeHtml(currentClinicName) || 'العيادة'}</p>
     <div class="detail-box">
-      <div class="detail-row"><span>الاسم</span><b>${currentBooking.patientName || ''}</b></div>
-      <div class="detail-row"><span>اليوم</span><b>${currentBooking.day}</b></div>
-      <div class="detail-row"><span>الوقت</span><b>${currentBooking.time}</b></div>
+      <div class="detail-row"><span>الاسم</span><b>${escapeHtml(currentBooking.patientName || '')}</b></div>
+      <div class="detail-row"><span>اليوم</span><b>${escapeHtml(currentBooking.day)}</b></div>
+      <div class="detail-row"><span>الوقت</span><b>${escapeHtml(currentBooking.time)}</b></div>
     </div>
     <div class="stars" id="stars">
       ${[1,2,3,4,5].map((n) => `<span class="star" data-val="${n}">★</span>`).join('')}

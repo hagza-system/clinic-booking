@@ -2279,10 +2279,10 @@ function renderMbList(bookings) {
     const card = document.createElement('div');
     card.className = 'mybooking-card';
     card.innerHTML = `
-      ${b.doctor ? `<div class="mb-row"><span>الدكتور</span><b>${b.doctor}</b></div>` : ''}
-      <div class="mb-row"><span>الخدمة</span><b>${b.service}</b></div>
-      <div class="mb-row"><span>التاريخ</span><b>${b.day}</b></div>
-      <div class="mb-row"><span>الوقت</span><b>${b.time}</b></div>
+      ${b.doctor ? `<div class="mb-row"><span>الدكتور</span><b>${escapeHtml(b.doctor)}</b></div>` : ''}
+      <div class="mb-row"><span>الخدمة</span><b>${escapeHtml(b.service)}</b></div>
+      <div class="mb-row"><span>التاريخ</span><b>${escapeHtml(b.day)}</b></div>
+      <div class="mb-row"><span>الوقت</span><b>${escapeHtml(b.time)}</b></div>
       <div class="mybooking-actions">
         <button type="button" class="mb-btn primary" data-act="edit">✏️ تعديل الموعد</button>
         <button type="button" class="mb-btn danger" data-act="cancel">❌ إلغاء</button>

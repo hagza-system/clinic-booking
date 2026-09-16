@@ -73,6 +73,10 @@ const BOOKING_ID = params.get('id') || '';
 
 const card = document.getElementById('card');
 
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 // بيقبل رقم بأي صيغة (محلي 01xxxxxxxxx أو دولي 20xxxxxxxxxx بالفعل) ويرجعه بصيغة واتساب الدولية
 function toWhatsappNumber(raw) {
   const digits = (raw || '').replace(/[^0-9]/g, '');
@@ -94,11 +98,11 @@ function renderError(message) {
 function renderPending(booking, clinicInfo) {
   card.innerHTML = `
     <h1>تأكيد موعدك</h1>
-    <p class="clinic-name">${clinicInfo.clinicName || 'العيادة'}</p>
+    <p class="clinic-name">${escapeHtml(clinicInfo.clinicName) || 'العيادة'}</p>
     <div class="detail-box">
-      <div class="detail-row"><span>الاسم</span><b>${booking.patientName}</b></div>
-      <div class="detail-row"><span>اليوم</span><b>${booking.day}</b></div>
-      <div class="detail-row"><span>الوقت</span><b>${booking.time}</b></div>
+      <div class="detail-row"><span>الاسم</span><b>${escapeHtml(booking.patientName)}</b></div>
+      <div class="detail-row"><span>اليوم</span><b>${escapeHtml(booking.day)}</b></div>
+      <div class="detail-row"><span>الوقت</span><b>${escapeHtml(booking.time)}</b></div>
     </div>
     <button type="button" class="btn-primary" id="confirm-btn">✅ تأكيد الموعد</button>
     <button type="button" class="btn-link" id="reschedule-link">الميعاد ده مش مناسب؟ اطلب ميعاد تاني</button>
@@ -111,7 +115,7 @@ function renderPending(booking, clinicInfo) {
 function renderRescheduleRequested(booking, clinicInfo) {
   card.innerHTML = `
     <h1>تأكيد الموعد</h1>
-    <p class="clinic-name">${clinicInfo.clinicName || 'العيادة'}</p>
+    <p class="clinic-name">${escapeHtml(clinicInfo.clinicName) || 'العيادة'}</p>
     <div class="status-box info">
       📤 تم إرسال طلبك للعيادة<br>
       <span style="font-weight:400; font-size:13px;">هيتم التواصل معاك بميعاد جديد قريبًا</span>
@@ -123,10 +127,10 @@ function renderRescheduleRequested(booking, clinicInfo) {
 function renderConfirmed(booking, clinicInfo) {
   card.innerHTML = `
     <h1>تأكيد الموعد</h1>
-    <p class="clinic-name">${clinicInfo.clinicName || 'العيادة'}</p>
+    <p class="clinic-name">${escapeHtml(clinicInfo.clinicName) || 'العيادة'}</p>
     <div class="status-box good">
       ✅ تم تأكيد موعدك بنجاح<br>
-      <span style="font-weight:400; font-size:13px;">${booking.day} — ${booking.time}</span>
+      <span style="font-weight:400; font-size:13px;">${escapeHtml(booking.day)} — ${escapeHtml(booking.time)}</span>
     </div>
   `;
 }

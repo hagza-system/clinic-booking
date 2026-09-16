@@ -245,6 +245,11 @@ const CLINIC_ID = new URLSearchParams(location.search).get('clinic') || "demo-cl
 })();
 const baseUrl = 'https://hagza-system.github.io/clinic-booking/';
 
+// بيمنع أي بيانات جاية من المريض (اسم/رقم/تعليق تقييم...) إنها تتفذ كـ HTML/JS لما تتعرض في الداشبورد
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 let settings = {};
 let bookings = [];
 let allBookingsFull = []; // كل الحجوزات من غير فلترة فرع - المصدر الأساسي، bookings بتتفلتر منه
@@ -419,7 +424,8 @@ function isPastDay(dateStr) {
 }
 
 function toWhatsappFormat(localPhone) {
-  return '20' + (localPhone || '').replace(/^0/, '');
+  const digits = (localPhone || '').replace(/[^0-9]/g, '').replace(/^0/, '');
+  return '20' + digits;
 }
 
 function populateBlockDateSelect() {
@@ -444,7 +450,7 @@ document.getElementById('check-block-btn').addEventListener('click', () => {
       const msg = encodeURIComponent(`مرحباً، للأسف محتاجين نأجل موعدك يوم ${dateKey} الساعة ${b.time} لظرف طارئ في العيادة. تقدر/ي تتواصل معانا نحدد ميعاد بديل يناسبك.`);
       html += `
         <div class="booking-row" style="background:var(--bg); border-radius:10px; margin-bottom:8px; padding:10px 14px; border-top:none;">
-          <div class="info"><b>${b.time}</b>${b.doctor ? `<span>${b.doctor}</span>` : ''}<span dir="ltr">${b.phone}</span></div>
+          <div class="info"><b>${escapeHtml(b.time)}</b>${b.doctor ? `<span>${escapeHtml(b.doctor)}</span>` : ''}<span dir="ltr">${escapeHtml(b.phone)}</span></div>
           <a href="https://wa.me/${toWhatsappFormat(b.phone)}?text=${msg}" target="_blank" rel="noopener" class="icon-btn" style="text-decoration:none; background:#25D366; color:#fff; border:none;">📱 واتساب</a>
         </div>`;
     });
@@ -520,8 +526,8 @@ function renderStats() {
 
   document.getElementById('stats-row').innerHTML = `
     <div class="stat-card"><div class="num">${total}</div><div class="label">إجمالي الحجوزات الحالية</div></div>
-    <div class="stat-card"><div class="num">${busiestDay}</div><div class="label">أكتر يوم مطلوب</div></div>
-    <div class="stat-card"><div class="num">${topService}</div><div class="label">أكتر خدمة مطلوبة</div></div>
+    <div class="stat-card"><div class="num">${escapeHtml(busiestDay)}</div><div class="label">أكتر يوم مطلوب</div></div>
+    <div class="stat-card"><div class="num">${escapeHtml(topService)}</div><div class="label">أكتر خدمة مطلوبة</div></div>
   `;
 
   const dayOrder = Object.keys(perDay).sort((a, b) => (parseArabicDateKey(a) || 0) - (parseArabicDateKey(b) || 0));
@@ -546,7 +552,7 @@ function renderBarChart(containerId, dataObj, orderedKeys) {
     const pct = Math.round((value / maxVal) * 100);
     return `
       <div class="bar-row">
-        <span class="bar-label">${key}</span>
+        <span class="bar-label">${escapeHtml(key)}</span>
         <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
         <span class="bar-value">${value}</span>
       </div>`;
@@ -596,10 +602,10 @@ function renderDaysList() {
         row.className = 'booking-row';
         row.innerHTML = `
           <div class="info">
-            <b>${b.time}</b>
-            ${b.doctor ? `<span>${b.doctor}</span>` : ''}
-            <span>${b.service}</span>
-            <span dir="ltr">${b.phone}</span>
+            <b>${escapeHtml(b.time)}</b>
+            ${b.doctor ? `<span>${escapeHtml(b.doctor)}</span>` : ''}
+            <span>${escapeHtml(b.service)}</span>
+            <span dir="ltr">${escapeHtml(b.phone)}</span>
           </div>
           <div class="row-actions">
             <button type="button" class="icon-btn edit-btn">تعديل</button>
@@ -642,10 +648,10 @@ function renderPastList() {
       html += `
         <div class="booking-row" style="opacity:0.65;">
           <div class="info">
-            <b>${b.time}</b>
-            ${b.doctor ? `<span>${b.doctor}</span>` : ''}
-            <span>${b.service}</span>
-            <span dir="ltr">${b.phone}</span>
+            <b>${escapeHtml(b.time)}</b>
+            ${b.doctor ? `<span>${escapeHtml(b.doctor)}</span>` : ''}
+            <span>${escapeHtml(b.service)}</span>
+            <span dir="ltr">${escapeHtml(b.phone)}</span>
           </div>
         </div>`;
     });
@@ -734,15 +740,15 @@ function openEdit(booking) {
   // لو تاريخ الحجز الأصلي مبقاش ضمن الأيام الجاية (مثلاً حجز قديم)، ضيفيه في الأول عشان ميضيعش
   daySelect.innerHTML = upcomingDates.some(d => formatDateKey(d) === booking.day)
     ? dateOptionsHtml
-    : `<option value="${booking.day}" selected>${booking.day}</option>` + dateOptionsHtml;
+    : `<option value="${escapeHtml(booking.day)}" selected>${escapeHtml(booking.day)}</option>` + dateOptionsHtml;
 
   const serviceSelect = document.getElementById('edit-service');
-  serviceSelect.innerHTML = serviceOptions.map(s => `<option ${s === booking.service ? 'selected' : ''}>${s}</option>`).join('');
+  serviceSelect.innerHTML = serviceOptions.map(s => `<option ${s === booking.service ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('');
 
   const doctorField = document.getElementById('edit-doctor-field');
   if (doctorOptions.length > 1) {
     doctorField.style.display = 'block';
-    document.getElementById('edit-doctor').innerHTML = doctorOptions.map(d => `<option ${d === booking.doctor ? 'selected' : ''}>${d}</option>`).join('');
+    document.getElementById('edit-doctor').innerHTML = doctorOptions.map(d => `<option ${d === booking.doctor ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('');
   } else {
     doctorField.style.display = 'none';
   }
@@ -820,7 +826,7 @@ function showNotifyBanner(booking, message) {
   const banner = document.getElementById('notify-banner');
   const waMsg = encodeURIComponent(message);
   banner.innerHTML = `
-    <p style="font-size:13.5px; margin-bottom:10px;">✅ اتحفظ التغيير - متنساش تبلغ العميل صاحب الرقم <b dir="ltr">${booking.phone}</b></p>
+    <p style="font-size:13.5px; margin-bottom:10px;">✅ اتحفظ التغيير - متنساش تبلغ العميل صاحب الرقم <b dir="ltr">${escapeHtml(booking.phone)}</b></p>
     <a href="https://wa.me/${toWhatsappFormat(booking.phone)}?text=${waMsg}" target="_blank" rel="noopener"
        style="display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:10px; background:#25D366; color:#fff; text-decoration:none; font-size:13.5px; font-weight:600;">
       📱 بلغ العميل على واتساب
@@ -974,9 +980,9 @@ function renderFollowupList() {
     return `
     <div class="fu-row" data-id="${b.id}">
       <div class="fu-info">
-        <b>${b.patientName}</b>
-        <span dir="ltr">${b.phone}</span>
-        <span>${b.day} — ${b.time}</span>
+        <b>${escapeHtml(b.patientName)}</b>
+        <span dir="ltr">${escapeHtml(b.phone)}</span>
+        <span>${escapeHtml(b.day)} — ${escapeHtml(b.time)}</span>
         ${requestedLine}
       </div>
       <span class="fu-status ${b.status}">${FU_STATUS_LABELS[b.status] || b.status}</span>
@@ -1125,9 +1131,9 @@ function renderSmReminders() {
     return `
     <div class="fu-row" data-id="${b.id}" data-type="${b.type || 'booking'}">
       <div class="fu-info">
-        <b>${b.patientName || 'بدون اسم'}</b>${followupTag}
-        <span dir="ltr">${b.phone}</span>
-        <span>${b.day} — ${b.time}${b.service ? ' — ' + b.service : ''}</span>
+        <b>${escapeHtml(b.patientName) || 'بدون اسم'}</b>${followupTag}
+        <span dir="ltr">${escapeHtml(b.phone)}</span>
+        <span>${escapeHtml(b.day)} — ${escapeHtml(b.time)}${b.service ? ' — ' + escapeHtml(b.service) : ''}</span>
       </div>
       <div class="fu-actions">
         <a class="icon-btn sm-reminder-send" data-id="${b.id}" data-type="${b.type || 'booking'}" href="${link}" target="_blank" rel="noopener">📱 إرسال التذكير</a>
@@ -1172,9 +1178,9 @@ function renderSmReviewRequests() {
     return `
     <div class="fu-row" data-id="${b.id}">
       <div class="fu-info">
-        <b>${b.patientName || 'بدون اسم'}</b>
-        <span dir="ltr">${b.phone}</span>
-        <span>${b.day} — ${b.time}</span>
+        <b>${escapeHtml(b.patientName) || 'بدون اسم'}</b>
+        <span dir="ltr">${escapeHtml(b.phone)}</span>
+        <span>${escapeHtml(b.day)} — ${escapeHtml(b.time)}</span>
       </div>
       <div class="fu-actions">
         <a class="icon-btn sm-review-send" data-id="${b.id}" href="${waLink}" target="_blank" rel="noopener">📱 طلب تقييم</a>
@@ -1224,11 +1230,11 @@ function renderSmBroadcast() {
   listEl.innerHTML = smPatients.map((p) => `
     <div class="fu-row">
       <div class="fu-info">
-        <b>${p.patientName || 'بدون اسم'}</b>
-        <span dir="ltr">${p.phone}</span>
+        <b>${escapeHtml(p.patientName) || 'بدون اسم'}</b>
+        <span dir="ltr">${escapeHtml(p.phone)}</span>
       </div>
       <div class="fu-actions">
-        <button type="button" class="icon-btn sm-broadcast-send" data-phone="${p.phone}">📱 إرسال</button>
+        <button type="button" class="icon-btn sm-broadcast-send" data-phone="${escapeHtml(p.phone)}">📱 إرسال</button>
       </div>
     </div>`).join('');
   listEl.querySelectorAll('.sm-broadcast-send').forEach((btn) => {
@@ -1260,11 +1266,11 @@ function renderSmReviews() {
   el.innerHTML = smReviews.map((r) => `
     <div class="fu-row">
       <div class="fu-info">
-        <b>${r.patientName || 'مريض'}</b>
-        <span>${r.day}</span>
-        ${r.comment ? `<span>${r.comment}</span>` : ''}
+        <b>${escapeHtml(r.patientName) || 'مريض'}</b>
+        <span>${escapeHtml(r.day)}</span>
+        ${r.comment ? `<span>${escapeHtml(r.comment)}</span>` : ''}
       </div>
-      <span class="fu-status confirmed">${'⭐'.repeat(r.rating)}</span>
+      <span class="fu-status confirmed">${'⭐'.repeat(Math.max(0, Math.min(5, parseInt(r.rating, 10) || 0)))}</span>
     </div>`).join('');
 }
 

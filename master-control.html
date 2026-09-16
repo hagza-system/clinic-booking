@@ -178,6 +178,10 @@
 <script>
 const API_URL = "https://fuhhwbcwwtvtatwkqkps.supabase.co/functions/v1/api";
 const baseUrl = 'https://hagza-system.github.io/clinic-booking/';
+// بيمنع أي اسم عيادة/سؤال أمان جاي من عميل إنه يتفذ كـ HTML/JS في لوحة التحكم الرئيسية دي (أعلى صلاحية في النظام)
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 let currentPin = '';
 let addonsCatalog = [];
 
@@ -303,12 +307,12 @@ function renderClinics(clinics) {
     }).join('');
     row.innerHTML = `
       <div>
-        <div class="clinic-name">${c.clinicName || c.clinicId}</div>
-        <div class="clinic-id">${c.clinicId}</div>
+        <div class="clinic-name">${escapeHtml(c.clinicName) || escapeHtml(c.clinicId)}</div>
+        <div class="clinic-id">${escapeHtml(c.clinicId)}</div>
         <span class="status-pill ${c.subscriptionActive ? 'active' : 'inactive'}">${c.subscriptionActive ? '✓ مفعّل' : '✗ موقوف'}</span>
       </div>
       <div class="clinic-actions">
-        <button class="toggle-btn ${c.subscriptionActive ? 'toggle-off' : 'toggle-on'}" data-action="toggle" data-id="${c.clinicId}" data-active="${c.subscriptionActive}">
+        <button class="toggle-btn ${c.subscriptionActive ? 'toggle-off' : 'toggle-on'}" data-action="toggle" data-id="${escapeHtml(c.clinicId)}" data-active="${c.subscriptionActive}">
           ${c.subscriptionActive ? 'إيقاف' : 'تفعيل'}
         </button>
         <button class="icon-btn edit-btn" data-action="edit-open">تعديل الاسم</button>
@@ -345,7 +349,7 @@ function renderClinics(clinics) {
       <div class="edit-box">
         <div class="field">
           <label>الاسم الجديد للعيادة</label>
-          <input type="text" class="edit-name-input" value="${(c.clinicName || '').replace(/"/g, '&quot;')}">
+          <input type="text" class="edit-name-input" value="${escapeHtml(c.clinicName || '')}">
         </div>
         <p class="error-msg edit-error"></p>
         <div class="inline-actions">
@@ -354,8 +358,8 @@ function renderClinics(clinics) {
         </div>
       </div>
       <div class="delete-box">
-        <p>عشان تأكد إنك عايز تمسح "${c.clinicName || c.clinicId}" خالص، اكتب معرّف العيادة (${c.clinicId}) في الخانة دي:</p>
-        <input type="text" class="delete-confirm-input" dir="ltr" placeholder="${c.clinicId}">
+        <p>عشان تأكد إنك عايز تمسح "${escapeHtml(c.clinicName) || escapeHtml(c.clinicId)}" خالص، اكتب معرّف العيادة (${escapeHtml(c.clinicId)}) في الخانة دي:</p>
+        <input type="text" class="delete-confirm-input" dir="ltr" placeholder="${escapeHtml(c.clinicId)}">
         <p class="error-msg delete-error"></p>
         <div class="inline-actions">
           <button class="btn btn-secondary" data-action="delete-cancel">إلغاء</button>
@@ -366,11 +370,11 @@ function renderClinics(clinics) {
         <p class="security-info">لو العميل نسي الباسورد بيتسأل السؤال ده وهيتقارن بالإجابة، وتقدر تعدّلهم من هنا في أي وقت (بيتحدّثوا هنا تلقائي لو العميل غيّرهم من لوحته برضو).</p>
         <div class="field">
           <label>سؤال الأمان</label>
-          <input type="text" class="security-question-input" value="${(c.securityQuestion || '').replace(/"/g, '&quot;')}">
+          <input type="text" class="security-question-input" value="${escapeHtml(c.securityQuestion || '')}">
         </div>
         <div class="field">
           <label>إجابة سؤال الأمان</label>
-          <input type="text" class="security-answer-input" value="${(c.securityAnswer || '').replace(/"/g, '&quot;')}">
+          <input type="text" class="security-answer-input" value="${escapeHtml(c.securityAnswer || '')}">
         </div>
         <p class="error-msg security-error"></p>
         <p class="ok-msg security-ok">اتحفظ ✅</p>
