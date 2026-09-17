@@ -697,6 +697,13 @@
           <option value="receptionist" selected>سكرتيرة / استقبال</option>
         </select>
       </div>
+      <div class="field" id="tm-branch-field" style="display:none;">
+        <label>الفرع</label>
+        <select id="tm-branch">
+          <option value="">كل الفروع</option>
+        </select>
+        <p class="hint">افتراضيًا الموظف بيشتغل على كل الفروع - اختار فرع بعينه لو عايزه يشوف حجوزات الفرع ده بس</p>
+      </div>
       <div class="field">
         <label id="tm-password-label">كلمة السر</label>
         <input type="password" id="tm-password" placeholder="٦ أحرف على الأقل">
@@ -2127,11 +2134,36 @@ let tmStaffCache = [];
 let tmEditingId = null;
 const TM_ROLE_LABELS = { manager: 'مدير عيادة', doctor: 'دكتور', receptionist: 'سكرتيرة / استقبال' };
 
+function tmBranchLabel(branchId) {
+  if (!branchId) return 'كل الفروع';
+  if (branchId === '__main__') return 'الفرع الرئيسي بس';
+  const branch = brBranchesCache.find((b) => String(b.id) === String(branchId));
+  return branch ? `${branch.name} بس` : 'فرع محدد';
+}
+
 document.getElementById('open-team-screen').addEventListener('click', () => {
   document.getElementById('settings-form').style.display = 'none';
   document.getElementById('team-screen').style.display = 'block';
   loadTeamList();
 });
+
+// بنجيب قايمة الفروع (لو خدمة الفروع المتعددة مفعّلة) عشان نعرضها في اختيار فرع الموظف - بنعيد استخدام نفس الكاش والـ API بتاع شاشة الفروع
+async function ensureBranchesLoadedForTeam() {
+  const addons = (baseSettings && baseSettings.addons) || {};
+  if (!addons.multi_branch) return [];
+  if (!brBranchesCache.length) {
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'listBranches', clinicId: CLINIC_ID, pin: enteredPin })
+      });
+      const result = await res.json();
+      if (result.success) brBranchesCache = result.branches || [];
+    } catch (err) { /* هنسيب الفلتر بـ"كل الفروع" بس لو فشل الجلب */ }
+  }
+  return brBranchesCache;
+}
 document.getElementById('back-to-settings-from-team').addEventListener('click', () => {
   document.getElementById('team-screen').style.display = 'none';
   document.getElementById('settings-form').style.display = 'block';
@@ -2142,6 +2174,7 @@ async function loadTeamList() {
   const errEl = document.getElementById('team-error');
   errEl.style.display = 'none';
   listEl.innerHTML = '<p class="tag-empty-hint">جاري التحميل...</p>';
+  await ensureBranchesLoadedForTeam(); // عشان نقدر نعرض اسم الفرع الصحيح جنب كل موظف مقيّد
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -2164,7 +2197,7 @@ async function loadTeamList() {
       <button type="button" class="branch-card" data-id="${escapeHtml(s.id)}">
         <div class="branch-card-info">
           <span class="branch-card-name">${escapeHtml(s.fullName)}${s.isActive ? '' : ' (متوقف)'}</span>
-          <span class="branch-card-address">${escapeHtml(TM_ROLE_LABELS[s.role] || s.role)} — ${escapeHtml(s.username)}</span>
+          <span class="branch-card-address">${escapeHtml(TM_ROLE_LABELS[s.role] || s.role)} — ${escapeHtml(s.username)} — ${escapeHtml(tmBranchLabel(s.branchId))}</span>
         </div>
         <span class="branch-card-arrow">‹</span>
       </button>
@@ -2179,7 +2212,7 @@ async function loadTeamList() {
   }
 }
 
-function openTeamForm(staffId) {
+async function openTeamForm(staffId) {
   tmEditingId = staffId || null;
   const staff = staffId ? tmStaffCache.find((s) => String(s.id) === String(staffId)) : null;
   document.getElementById('team-form-title').textContent = staff ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد';
@@ -2194,6 +2227,20 @@ function openTeamForm(staffId) {
   document.getElementById('tm-active').checked = staff ? !!staff.isActive : true;
   document.getElementById('tm-active-field').style.display = staff ? 'flex' : 'none';
   document.getElementById('delete-team-btn').style.display = staff ? 'block' : 'none';
+
+  const branches = await ensureBranchesLoadedForTeam();
+  const branchField = document.getElementById('tm-branch-field');
+  const branchSelect = document.getElementById('tm-branch');
+  if (branches.length) {
+    branchField.style.display = 'block';
+    branchSelect.innerHTML = '<option value="">كل الفروع</option><option value="__main__">الفرع الرئيسي بس</option>'
+      + branches.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)} بس</option>`).join('');
+    branchSelect.value = staff && staff.branchId ? staff.branchId : '';
+  } else {
+    branchField.style.display = 'none';
+    branchSelect.value = '';
+  }
+
   document.getElementById('team-screen').style.display = 'none';
   document.getElementById('team-form-screen').style.display = 'block';
 }
@@ -2211,6 +2258,7 @@ document.getElementById('save-team-btn').addEventListener('click', async () => {
   const username = document.getElementById('tm-username').value.trim();
   const role = document.getElementById('tm-role').value;
   const password = document.getElementById('tm-password').value;
+  const branchId = document.getElementById('tm-branch-field').style.display !== 'none' ? (document.getElementById('tm-branch').value || null) : null;
   if (!fullName) { errEl.textContent = 'اكتب اسم الموظف'; errEl.style.display = 'block'; return; }
   if (!tmEditingId && !/^[a-zA-Z0-9_.]{3,30}$/.test(username)) { errEl.textContent = 'اسم الدخول لازم يكون حروف إنجليزي/أرقام بس، من ٣ لـ٣٠ حرف'; errEl.style.display = 'block'; return; }
   if (!tmEditingId && password.length < 6) { errEl.textContent = 'كلمة السر لازم تكون ٦ أحرف على الأقل'; errEl.style.display = 'block'; return; }
@@ -2218,8 +2266,8 @@ document.getElementById('save-team-btn').addEventListener('click', async () => {
   btn.disabled = true;
   try {
     const payload = tmEditingId
-      ? { action: 'staffUpdateAccount', clinicId: CLINIC_ID, pin: enteredPin, staffId: tmEditingId, fullName, role, isActive: document.getElementById('tm-active').checked, newPassword: password || undefined }
-      : { action: 'staffCreateAccount', clinicId: CLINIC_ID, pin: enteredPin, fullName, username, role, password };
+      ? { action: 'staffUpdateAccount', clinicId: CLINIC_ID, pin: enteredPin, staffId: tmEditingId, fullName, role, branchId, isActive: document.getElementById('tm-active').checked, newPassword: password || undefined }
+      : { action: 'staffCreateAccount', clinicId: CLINIC_ID, pin: enteredPin, fullName, username, role, branchId, password };
     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
     const result = await res.json();
     btn.disabled = false;

@@ -326,6 +326,13 @@ async function loadSettings() {
 }
 
 function renderBranchFilterRow() {
+  // الموظف المقيّد بفرع معيّن مالوش داعي يشوف تبويب تبديل فروع أصلاً - هو أصلاً مش بيشوف غير بيانات فرعه من السيرفر
+  if (currentStaffInfo && currentStaffInfo.branchId) {
+    const row = document.getElementById('branch-filter-row');
+    row.style.display = 'none';
+    row.innerHTML = '';
+    return;
+  }
   const row = document.getElementById('branch-filter-row');
   if (!allBranches.length) {
     row.style.display = 'none';
@@ -400,7 +407,7 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
         return;
       }
       pinToUse = loginResult.token;
-      currentStaffInfo = { fullName: loginResult.fullName, role: loginResult.role };
+      currentStaffInfo = { fullName: loginResult.fullName, role: loginResult.role, branchId: loginResult.branchId || null };
     } else {
       pinToUse = document.getElementById('pin-input').value.trim();
       currentStaffInfo = null;
@@ -423,11 +430,19 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
     document.getElementById('dashboard').style.display = 'block';
     const badge = document.getElementById('staff-badge');
     if (currentStaffInfo) {
-      badge.textContent = `مسجّل دخول: ${currentStaffInfo.fullName} (${STAFF_ROLE_LABELS[currentStaffInfo.role] || currentStaffInfo.role})`;
+      let branchNote = '';
+      if (currentStaffInfo.branchId === '__main__') branchNote = ' — الفرع الرئيسي بس';
+      else if (currentStaffInfo.branchId) {
+        const b = allBranches.find((x) => String(x.id) === String(currentStaffInfo.branchId));
+        branchNote = b ? ` — ${b.name} بس` : '';
+      }
+      badge.textContent = `مسجّل دخول: ${currentStaffInfo.fullName} (${STAFF_ROLE_LABELS[currentStaffInfo.role] || currentStaffInfo.role})${branchNote}`;
       badge.style.display = 'block';
     } else {
       badge.style.display = 'none';
     }
+    // الموظف المقيّد بفرع معيّن: السيرفر أصلاً بيرجّع بيانات فرعه بس، فبنثبّت الفلتر على فرعه (مش "الكل") عشان الإحصائيات تتحسب صح
+    currentBranchFilter = (currentStaffInfo && currentStaffInfo.branchId) ? currentStaffInfo.branchId : null;
     renderBranchFilterRow();
     applyBranchFilterAndRender();
   } catch (err) {
