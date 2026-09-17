@@ -129,12 +129,29 @@
 <div id="pin-gate">
   <h1>حجزة <span style="font-weight:400;font-size:0.6em;">HAGZA</span></h1>
   <p style="margin-top:-8px;margin-bottom:10px;">لوحة تحكم الحجوزات</p>
-  <p>ادخل بنفس كلمة سر إعدادات العيادة</p>
-  <div class="field">
-    <input type="password" id="pin-input" placeholder="كلمة السر">
+
+  <div id="owner-login-fields">
+    <p>ادخل بنفس كلمة سر إعدادات العيادة</p>
+    <div class="field">
+      <input type="password" id="pin-input" placeholder="كلمة السر">
+    </div>
   </div>
+
+  <div id="staff-login-fields" style="display:none;">
+    <p>ادخل ببيانات حسابك اللي إداهولك صاحب العيادة</p>
+    <div class="field">
+      <input type="text" id="staff-username-input" placeholder="اسم الدخول" dir="ltr" autocapitalize="off">
+    </div>
+    <div class="field">
+      <input type="password" id="staff-password-input" placeholder="كلمة السر">
+    </div>
+  </div>
+
   <p class="error-msg" id="pin-error">كلمة السر غير صحيحة</p>
   <button class="btn-primary" id="submit-pin">دخول</button>
+  <p style="text-align:center; margin-top:10px;">
+    <button type="button" id="toggle-login-mode" style="background:none; border:none; color:var(--primary); font-size:12.5px; cursor:pointer; text-decoration:underline; font-family:inherit;">دخول كموظف بحساب شخصي</button>
+  </p>
 </div>
 
 <div class="wrap" id="dashboard">
@@ -142,6 +159,7 @@
     <h1 id="dash-title">لوحة التحكم<span id="dash-subtitle">—</span></h1>
     <button id="refresh-btn">تحديث 🔄</button>
   </div>
+  <div id="staff-badge" style="display:none; font-size:12.5px; color:#6b7280; margin-top:-10px; margin-bottom:14px;"></div>
   <div id="notify-banner" class="notify-toast" style="display:none; background:#fff; border:1.5px solid #25D366; border-radius:14px; padding:12px 16px;"></div>
   <div id="branch-filter-row" style="display:none; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
   <div class="stats-row" id="stats-row"></div>
@@ -341,16 +359,56 @@ function applyBranchFilterAndRender() {
   renderDashboard();
 }
 
+let loginMode = 'owner'; // 'owner' = كلمة سر العيادة الرئيسية | 'staff' = حساب موظف شخصي
+let currentStaffInfo = null; // { fullName, role } لو دخل موظف بحسابه الشخصي
+const STAFF_ROLE_LABELS = { manager: 'مدير عيادة', doctor: 'دكتور', receptionist: 'سكرتيرة/استقبال' };
+
+document.getElementById('toggle-login-mode').addEventListener('click', () => {
+  loginMode = loginMode === 'owner' ? 'staff' : 'owner';
+  document.getElementById('owner-login-fields').style.display = loginMode === 'owner' ? 'block' : 'none';
+  document.getElementById('staff-login-fields').style.display = loginMode === 'staff' ? 'block' : 'none';
+  document.getElementById('toggle-login-mode').textContent = loginMode === 'owner' ? 'دخول كموظف بحساب شخصي' : 'دخول بكلمة سر العيادة الرئيسية';
+  document.getElementById('pin-error').style.display = 'none';
+});
+
 document.getElementById('submit-pin').addEventListener('click', async () => {
-  const pin = document.getElementById('pin-input').value.trim();
   const pinError = document.getElementById('pin-error');
   const btn = document.getElementById('submit-pin');
+  pinError.style.display = 'none';
   btn.disabled = true;
   try {
+    let pinToUse;
+    if (loginMode === 'staff') {
+      const username = document.getElementById('staff-username-input').value.trim();
+      const password = document.getElementById('staff-password-input').value;
+      if (!username || !password) {
+        pinError.textContent = 'اكتب اسم الدخول وكلمة السر';
+        pinError.style.display = 'block';
+        btn.disabled = false;
+        return;
+      }
+      const loginRes = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'staffLogin', clinicId: CLINIC_ID, username, password })
+      });
+      const loginResult = await loginRes.json();
+      if (!loginResult.success) {
+        pinError.textContent = loginResult.message || 'بيانات الدخول غير صحيحة';
+        pinError.style.display = 'block';
+        btn.disabled = false;
+        return;
+      }
+      pinToUse = loginResult.token;
+      currentStaffInfo = { fullName: loginResult.fullName, role: loginResult.role };
+    } else {
+      pinToUse = document.getElementById('pin-input').value.trim();
+      currentStaffInfo = null;
+    }
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'getFullBookings', clinicId: CLINIC_ID, pin })
+      body: JSON.stringify({ action: 'getFullBookings', clinicId: CLINIC_ID, pin: pinToUse })
     });
     const result = await res.json();
     btn.disabled = false;
@@ -359,10 +417,17 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
       pinError.style.display = 'block';
       return;
     }
-    enteredPin = pin;
+    enteredPin = pinToUse;
     allBookingsFull = result.bookings;
     document.getElementById('pin-gate').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
+    const badge = document.getElementById('staff-badge');
+    if (currentStaffInfo) {
+      badge.textContent = `مسجّل دخول: ${currentStaffInfo.fullName} (${STAFF_ROLE_LABELS[currentStaffInfo.role] || currentStaffInfo.role})`;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+    }
     renderBranchFilterRow();
     applyBranchFilterAndRender();
   } catch (err) {
@@ -373,6 +438,12 @@ document.getElementById('submit-pin').addEventListener('click', async () => {
 });
 
 document.getElementById('pin-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('submit-pin').click();
+});
+document.getElementById('staff-username-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('submit-pin').click();
+});
+document.getElementById('staff-password-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('submit-pin').click();
 });
 
